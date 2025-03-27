@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Development",
+    "Projects": [
+      {
+        "Path": "DRIYA.Platform\\DRIYA.Platform.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "DRIYA.PlatformUI\\driya.platformui.esproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
