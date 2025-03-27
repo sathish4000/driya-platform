@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  # Override backend settings for development
+  driya.platform:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080;https://+:8081
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+
+  # Override frontend settings for development
+  driya.platformui:
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"  # Expose frontend on port 3000 on the host
+    volumes:
+      - ./driya.platformui:/app   # Bind mount for live reloading 
+    command: ["npm", "run", "dev"]
+
+  # You can add development-specific overrides for postgres or redis if needed.

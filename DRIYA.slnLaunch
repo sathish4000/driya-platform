@@ -3,6 +3,10 @@
     "Name": "Development",
     "Projects": [
       {
+        "Path": "docker-compose.dcproj",
+        "Action": "Start"
+      },
+      {
         "Path": "DRIYA.Platform\\DRIYA.Platform.csproj",
         "Action": "Start"
       },

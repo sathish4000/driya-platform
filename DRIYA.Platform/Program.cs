@@ -1,9 +1,5 @@
-
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using DRIYA.PlatformAPI.Data;
-using DRIYA.PlatformAPI.Models;
 
 namespace DRIYA.PlatformAPI
 {
@@ -28,6 +24,27 @@ namespace DRIYA.PlatformAPI
 
             });
 
+            // Add services to the container
+            var databaseType = builder.Configuration["Database:Type"]; // "PostgreSQL" or "SQLServer"
+
+            if (databaseType == "PostgreSQL")
+            {
+                builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQLConnection")));
+            }
+            else if (databaseType == "SQLServer")
+            {
+                builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("SQLServerConnection")));
+            }
+
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = builder.Configuration["Redis:ConnectionString"];
+                options.InstanceName = "RedisInstance";
+            });
+
+
             // Add services to the container.
             builder.Services.AddControllers();
             builder.Services.AddControllersWithViews();
@@ -35,11 +52,6 @@ namespace DRIYA.PlatformAPI
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                                                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-                                                    );
-
 
             var app = builder.Build();
 
