@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Override backend settings for development
+  # Development override for the Backend API service
   driya.platform:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -12,15 +12,37 @@ services:
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+      - ./DRIYA.Platform:/app  # Mount the backend source code for live updates
+    command: ["dotnet", "watch", "run"]
 
-  # Override frontend settings for development
+  # Development override for the Frontend service
   driya.platformui:
+    build:
+      context: ./driya.platformui
+      dockerfile: Dockerfile.dev   # Tell it to use the development Dockerfile
     environment:
       - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost:8080  # Backend API endpoint for development
     ports:
-      - "3000:3000"  # Expose frontend on port 3000 on the host
+      - "3000:3000"
     volumes:
-      - ./driya.platformui:/app   # Bind mount for live reloading 
+      - ./driya.platformui:/app  # Enable live reloading by binding the source
+      - /app/node_modules  # Prevent host/node_modules conflicts- 
+      - /app/.npm          # Cache directory
     command: ["npm", "run", "dev"]
 
-  # You can add development-specific overrides for postgres or redis if needed.
+  # (Optional) PostgreSQL override for development, if desired:
+  # postgres:
+  #   environment:
+  #     POSTGRES_USER: dev_user
+  #     POSTGRES_PASSWORD: dev_pass
+  #     POSTGRES_DB: driya_db_dev
+  #   volumes:
+  #     - ./postgres-dev-data:/var/lib/postgresql/data
+
+  # (Optional) Redis override for development, if additional logging is needed:
+  # redis:
+  #   command: ["redis-server", "--loglevel", "debug"]
+  
+# volumes:
+#   postgres_data:

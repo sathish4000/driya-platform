@@ -7,11 +7,16 @@
         "Action": "Start"
       },
       {
-        "Path": "DRIYA.Platform\\DRIYA.Platform.csproj",
-        "Action": "Start"
-      },
-      {
         "Path": "DRIYA.PlatformUI\\driya.platformui.esproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "Docker",
+    "Projects": [
+      {
+        "Path": "docker-compose.dcproj",
         "Action": "Start"
       }
     ]

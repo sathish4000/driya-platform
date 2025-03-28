@@ -1,18 +1,29 @@
 {
   "name": "driya.platformui",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --open",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix"
+    "type-check": "vue-tsc --noEmit",
+    "type-check:build": "vue-tsc --build",
+    "lint": "eslint --ext .js,.vue src",
+    "lint:fix": "eslint --ext .js,.vue src --fix",
+    "format": "prettier --write src",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
-    "vue": "^3.5.13"
+    "@grafana/faro-web-sdk": "^1.14.1",
+    "axios": "^1.8.4",
+    "loglevel": "^1.9.2",
+    "open": "^10.1.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "web-vitals": "^2.1.4"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.0",
@@ -20,6 +31,7 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/eslint-config-typescript": "^14.5.0",
     "@vue/tsconfig": "^0.7.0",
+    "concurrently": "^9.1.2",
     "eslint": "^9.21.0",
     "eslint-plugin-vue": "~10.0.0",
     "jiti": "^2.4.2",
@@ -28,11 +40,5 @@
     "vite": "^6.2.1",
     "vite-plugin-vue-devtools": "^7.7.2",
     "vue-tsc": "^2.2.8"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.6.1"
-  },
-  "resolutions": {
-    "rollup": "npm:@rollup/wasm-node"
   }
 }

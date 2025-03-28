@@ -1,20 +1,27 @@
-# Use the latest stable version of Node.js
-FROM node:latest
-
-# Set the working directory in the container
+# Stage 1: Build the frontend application
+FROM node:18-alpine AS build
 WORKDIR /app
 
-# Copy package.json and package-lock.json first (to leverage Docker cache for faster builds)
-COPY package*.json ./ 
+# Copy package.json and package-lock.json first (leveraging Docker caching)
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the application files into the container
+# Copy the source code into the container
 COPY . .
 
-# Expose port 3000 for the Vue.js app
-EXPOSE 3000
+# Build the frontend app for production
+RUN npm run build
 
-# Run the Vue.js development server
-CMD ["npm", "run", "dev"]
+# Stage 2: Serve the frontend application using Nginx
+FROM nginx:alpine AS production
+
+# Copy the built application from the previous stage
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Expose port 80 for the web server
+EXPOSE 80
+
+# Command to run Nginx
+CMD ["nginx", "-g", "daemon off;"]

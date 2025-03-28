@@ -9,6 +9,11 @@ services:
       dockerfile: DRIYA.Platform/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__PostgreSQLConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Redis__ConnectionString=redis:6379
+    ports:
+      - "8080:8080" # HTTP port
+      - "8081:8081" # HTTPS port (optional)
     depends_on:
       - postgres
       - redis
@@ -21,6 +26,9 @@ services:
       dockerfile: Dockerfile         # Dockerfile inside the frontend folder
     environment:
       - NODE_ENV=production
+      - VITE_API_BASE_URL=http://driyaplatform:8080 # Point to the backend container
+    ports:
+      - "3000:3000" # Expose frontend service on the host
     depends_on:
       - driya.platform
 
@@ -31,19 +39,21 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-driya_db}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data # Persistent volume for database data
 
   # Redis service
   redis:
     image: redis:latest
     container_name: driya_redis
     ports:
-      - "6379:6379"
+      - "6379:6379" # Default Redis port
     command: ["redis-server"]
+    environment:
+      - REDIS_LOG_LEVEL=notice # Set optional log level for Redis
 
 volumes:
   postgres_data:

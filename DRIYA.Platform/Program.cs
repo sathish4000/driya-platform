@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using DRIYA.PlatformAPI.Data;
+using Serilog;
 
 namespace DRIYA.PlatformAPI
 {
@@ -7,76 +8,96 @@ namespace DRIYA.PlatformAPI
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration()
+                            .ReadFrom.Configuration(new ConfigurationBuilder()
+                                .AddJsonFile("appsettings.json")
+                                .Build())
+                            .Enrich.FromLogContext()
+                            .WriteTo.Console() // Write logs to the console
+                            .CreateLogger();
 
-            builder.Services.AddCors(options =>
+            try
             {
-                options.AddDefaultPolicy(
-                    builder =>
-                    {
-                        builder.WithOrigins("http://localhost:3000")
-                            .AllowAnyHeader()
-                            .AllowAnyMethod();
-                    });
+                Log.Information("Starting up");
+                var builder = WebApplication.CreateBuilder(args);
 
-                options.AddPolicy("AllowAllOrigins", 
-                    builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                builder.Host.UseSerilog();
 
-            });
+                builder.Services.AddCors(options =>
+                {
+                    options.AddDefaultPolicy(
+                        builder =>
+                        {
+                            builder.WithOrigins("http://localhost:3000")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                        });
 
-            // Add services to the container
-            var databaseType = builder.Configuration["Database:Type"]; // "PostgreSQL" or "SQLServer"
+                    options.AddPolicy("AllowAllOrigins",
+                        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                });
 
-            if (databaseType == "PostgreSQL")
-            {
-                builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQLConnection")));
+                // Add services to the container
+                var databaseType = builder.Configuration["Database:Type"]; // "PostgreSQL" or "SQLServer"
+
+                if (databaseType == "PostgreSQL")
+                {
+                    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQLConnection")));
+                }
+                else if (databaseType == "SQLServer")
+                {
+                    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                        options.UseSqlServer(builder.Configuration.GetConnectionString("SQLServerConnection")));
+                }
+
+                builder.Services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+                    options.InstanceName = "RedisInstance";
+                });
+
+                // Add services to the container.
+                builder.Services.AddControllers();
+                builder.Services.AddControllersWithViews();
+
+                // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen();
+
+                var app = builder.Build();
+
+                // Configure the HTTP request pipeline.
+                if (app.Environment.IsDevelopment())
+                {
+                    app.UseSwagger();
+                    app.UseSwaggerUI();
+                }
+
+                app.UseCors("AllowAllOrigins");
+
+                app.UseHttpsRedirection();
+                app.UseStaticFiles();
+
+                app.UseRouting();
+
+                app.UseAuthorization();
+
+                app.MapControllers();
+                app.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+                app.Run();
             }
-            else if (databaseType == "SQLServer")
+            catch (Exception ex)
             {
-                builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("SQLServerConnection")));
+                Log.Fatal(ex, "Application start-up failed");
             }
-
-            builder.Services.AddStackExchangeRedisCache(options =>
+            finally
             {
-                options.Configuration = builder.Configuration["Redis:ConnectionString"];
-                options.InstanceName = "RedisInstance";
-            });
-
-
-            // Add services to the container.
-            builder.Services.AddControllers();
-            builder.Services.AddControllersWithViews();
-
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                Log.CloseAndFlush();
             }
-
-            app.UseCors("AllowAllOrigins");
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.MapControllers();
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            app.Run();
         }
     }
 }
