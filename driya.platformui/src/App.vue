@@ -1,47 +1,79 @@
 <script setup lang="ts">
-  import HelloWorld from './components/HelloWorld.vue'
-  import TheWelcome from './components/TheWelcome.vue'
+// Main App component
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <div id="app">
+    <nav class="navbar">
+      <div class="nav-brand">DRIYA Platform</div>
+      <div class="nav-links">
+        <router-link to="/" class="nav-link">Home</router-link>
+        <router-link to="/login" class="nav-link">Login</router-link>
+        <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
+      </div>
+    </nav>
+    
+    <main class="main-content">
+      <router-view />
+    </main>
+  </div>
 </template>
 
-<style scoped>
-  header {
-    line-height: 1.5;
-  }
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  .logo {
-    display: block;
-    margin: 0 auto 2rem;
-  }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f5f5;
+}
 
-  @media (min-width: 1024px) {
-    header {
-      display: flex;
-      place-items: center;
-      padding-right: calc(var(--section-gap) / 2);
-    }
+#app {
+  min-height: 100vh;
+}
 
-    .logo {
-      margin: 0 2rem 0 0;
-    }
+.navbar {
+  background: #2c3e50;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 
-    header .wrapper {
-      display: flex;
-      place-items: flex-start;
-      flex-wrap: wrap;
-    }
-  }
+.nav-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.nav-link.router-link-active {
+  background-color: #3498db;
+}
+
+.main-content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 </style>

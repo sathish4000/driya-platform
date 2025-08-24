@@ -1,103 +1,264 @@
 using Microsoft.EntityFrameworkCore;
-using DRIYA.PlatformAPI.Data;
+using DRIYA.Platform.Data;
+using DRIYA.Platform.Models;
+using DRIYA.Platform.Services;
+using DRIYA.Platform.Middleware;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.OpenApi.Models;
 using Serilog;
 
-namespace DRIYA.PlatformAPI
+namespace DRIYA.Platform;
+
+public class Program
 {
-    public class Program
+    public static async Task Main(string[] args)
     {
-        public static void Main(string[] args)
+        Log.Logger = new LoggerConfiguration()
+                        .ReadFrom.Configuration(new ConfigurationBuilder()
+                            .AddJsonFile("appsettings.json")
+                            .Build())
+                        .Enrich.FromLogContext()
+                        .WriteTo.Console()
+                        .CreateLogger();
+
+        try
         {
-            Log.Logger = new LoggerConfiguration()
-                            .ReadFrom.Configuration(new ConfigurationBuilder()
-                                .AddJsonFile("appsettings.json")
-                                .Build())
-                            .Enrich.FromLogContext()
-                            .WriteTo.Console() // Write logs to the console
-                            .CreateLogger();
+            Log.Information("Starting DRIYA Platform");
+            var builder = WebApplication.CreateBuilder(args);
 
-            try
+            builder.Host.UseSerilog();
+
+            // Add CORS
+            builder.Services.AddCors(options =>
             {
-                Log.Information("Starting up");
-                var builder = WebApplication.CreateBuilder(args);
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.WithOrigins("http://localhost:3000", "https://localhost:7001")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                    });
 
-                builder.Host.UseSerilog();
+                options.AddPolicy("AllowAllOrigins",
+                    builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            });
 
-                builder.Services.AddCors(options =>
+            // Configure database
+            var databaseType = builder.Configuration["Database:Type"]; // "PostgreSQL" or "SQLServer"
+
+            if (databaseType == "PostgreSQL")
+            {
+                builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQLConnection")));
+            }
+            else if (databaseType == "SQLServer")
+            {
+                builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("SQLServerConnection")));
+            }
+
+            // Configure Identity
+            builder.Services.AddIdentity<ApplicationUser, Role>(options =>
+            {
+                // Password settings
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequiredUniqueChars = 1;
+
+                // Lockout settings
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+
+                // User settings
+                options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                options.User.RequireUniqueEmail = true;
+
+                // SignIn settings
+                options.SignIn.RequireConfirmedEmail = false;
+                options.SignIn.RequireConfirmedPhoneNumber = false;
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
+
+            // Configure Redis caching
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = builder.Configuration["Redis:ConnectionString"];
+                options.InstanceName = "DRIYA_Platform";
+            });
+
+            // Add services to the container
+            builder.Services.AddControllers();
+            builder.Services.AddControllersWithViews();
+
+            // Add API documentation
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new() { Title = "DRIYA Platform API", Version = "v1" });
+                
+                // Add JWT authentication to Swagger
+                c.AddSecurityDefinition("Bearer", new()
                 {
-                    options.AddDefaultPolicy(
-                        builder =>
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new()
+                {
+                    {
+                        new()
                         {
-                            builder.WithOrigins("http://localhost:3000")
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
-                        });
-
-                    options.AddPolicy("AllowAllOrigins",
-                        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                            Reference = new() { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                        },
+                        Array.Empty<string>()
+                    }
                 });
+            });
 
-                // Add services to the container
-                var databaseType = builder.Configuration["Database:Type"]; // "PostgreSQL" or "SQLServer"
+            // Add JWT Authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = "Bearer";
+                options.DefaultChallengeScheme = "Bearer";
+            })
+            .AddJwtBearer("Bearer", options =>
+            {
+                options.Authority = builder.Configuration["Jwt:Authority"];
+                options.Audience = builder.Configuration["Jwt:Audience"];
+                options.RequireHttpsMetadata = false;
+            });
 
-                if (databaseType == "PostgreSQL")
-                {
-                    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQLConnection")));
-                }
-                else if (databaseType == "SQLServer")
-                {
-                    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                        options.UseSqlServer(builder.Configuration.GetConnectionString("SQLServerConnection")));
-                }
+            // Add authorization
+            builder.Services.AddAuthorization(options =>
+            {
+                // Add policy for global admins
+                options.AddPolicy("GlobalAdmin", policy =>
+                    policy.RequireRole("GlobalAdmin"));
 
-                builder.Services.AddStackExchangeRedisCache(options =>
+                // Add policy for tenant admins
+                options.AddPolicy("TenantAdmin", policy =>
+                    policy.RequireRole("TenantAdmin", "GlobalAdmin"));
+
+                // Add policy for managers
+                options.AddPolicy("Manager", policy =>
+                    policy.RequireRole("Manager", "TenantAdmin", "GlobalAdmin"));
+            });
+
+            // Add HTTP context accessor for multi-tenancy
+            builder.Services.AddHttpContextAccessor();
+
+            // Add application services
+            builder.Services.AddScoped<ITenantService, TenantService>();
+            builder.Services.AddScoped<IFeatureService, FeatureService>();
+            builder.Services.AddScoped<IBillingService, BillingService>();
+            builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
                 {
-                    options.Configuration = builder.Configuration["Redis:ConnectionString"];
-                    options.InstanceName = "RedisInstance";
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "DRIYA Platform API v1");
+                    c.RoutePrefix = "swagger";
                 });
-
-                // Add services to the container.
-                builder.Services.AddControllers();
-                builder.Services.AddControllersWithViews();
-
-                // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-                builder.Services.AddEndpointsApiExplorer();
-                builder.Services.AddSwaggerGen();
-
-                var app = builder.Build();
-
-                // Configure the HTTP request pipeline.
-                if (app.Environment.IsDevelopment())
-                {
-                    app.UseSwagger();
-                    app.UseSwaggerUI();
-                }
-
-                app.UseCors("AllowAllOrigins");
-
-                app.UseHttpsRedirection();
-                app.UseStaticFiles();
-
-                app.UseRouting();
-
-                app.UseAuthorization();
-
-                app.MapControllers();
-                app.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-                app.Run();
             }
-            catch (Exception ex)
+
+            app.UseCors("AllowAllOrigins");
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            // Add multi-tenant middleware
+            app.UseMiddleware<TenantMiddleware>();
+
+            app.MapControllers();
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            // Ensure database is created and migrated
+            using (var scope = app.Services.CreateScope())
             {
-                Log.Fatal(ex, "Application start-up failed");
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                context.Database.Migrate();
+                
+                // Seed initial data if needed
+                await SeedInitialDataAsync(context, scope.ServiceProvider);
             }
-            finally
+
+            app.Run();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Application start-up failed");
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+
+    private static async Task SeedInitialDataAsync(ApplicationDbContext context, IServiceProvider serviceProvider)
+    {
+        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<Role>>();
+
+        // Create global admin user if it doesn't exist
+        if (!await userManager.Users.AnyAsync(u => u.Email == "admin@driya.com"))
+        {
+            var globalAdmin = new ApplicationUser
             {
-                Log.CloseAndFlush();
+                UserName = "admin@driya.com",
+                Email = "admin@driya.com",
+                FirstName = "Global",
+                LastName = "Administrator",
+                EmailConfirmed = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await userManager.CreateAsync(globalAdmin, "Admin123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(globalAdmin, "GlobalAdmin");
+                Log.Information("Global admin user created successfully");
             }
+        }
+
+        // Create demo tenant if it doesn't exist
+        if (!await context.Tenants.AnyAsync(t => t.TenantId == "demo"))
+        {
+            var demoTenant = new Tenant
+            {
+                Name = "Demo Tenant",
+                TenantId = "demo",
+                Description = "Demo tenant for testing purposes",
+                ContactEmail = "demo@example.com",
+                IsActive = true,
+                IsTrialActive = true,
+                TrialEndDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            context.Tenants.Add(demoTenant);
+            await context.SaveChangesAsync();
+            Log.Information("Demo tenant created successfully");
         }
     }
 }

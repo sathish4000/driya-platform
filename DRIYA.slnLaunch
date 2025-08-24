@@ -3,12 +3,14 @@
     "Name": "Development",
     "Projects": [
       {
-        "Path": "docker-compose.dcproj",
-        "Action": "Start"
+        "Path": "DRIYA.Platform\\DRIYA.Platform.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
       },
       {
-        "Path": "DRIYA.PlatformUI\\driya.platformui.esproj",
-        "Action": "Start"
+        "Path": "DRIYA.PlatformUI\\DRIYA.PlatformUI.csproj",
+        "Action": "Start",
+        "DebugTarget": "DRIYA.PlatformUI"
       }
     ]
   },

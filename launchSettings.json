@@ -1,5 +1,9 @@
 {
   "profiles": {
+    "Multiple Startup Projects": {
+      "commandName": "Project",
+      "commandVersion": "1.0"
+    },
     "Docker Compose": {
       "commandName": "DockerCompose",
       "commandVersion": "1.0",

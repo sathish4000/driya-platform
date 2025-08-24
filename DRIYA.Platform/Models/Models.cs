@@ -1,37 +1,24 @@
-﻿namespace DRIYA.PlatformAPI.Models
-{
+﻿// This file contains all the model classes for the DRIYA Platform
+// Each model is now in its own file for better organization
 
+namespace DRIYA.Platform.Models;
 
-    public class Invoice
-    {
-        public int Id { get; set; }
-        public int UserId { get; set; }
-        public decimal Amount { get; set; }
-        public DateTime Date { get; set; }
-        public string Status { get; set; }
+// The following models are defined in separate files:
+// - Tenant.cs - Multi-tenant SaaS platform tenants
+// - ApplicationUser.cs - Extended user model with multi-tenant support
+// - Role.cs - Role-based access control
+// - Permission.cs - Granular permissions
+// - UserRole.cs - User-role relationships
+// - RolePermission.cs - Role-permission relationships
+// - UserPermission.cs - Direct user permissions
+// - LicensePlan.cs - Subscription plans
+// - Feature.cs - Feature definitions
+// - FeatureFlag.cs - Dynamic feature toggles
+// - PlanFeature.cs - Plan-feature relationships
+// - Invoice.cs - Billing invoices
+// - InvoiceItem.cs - Invoice line items
+// - ApiKey.cs - API key management
+// - ApiKeyUsage.cs - API usage tracking
+// - LoginHistory.cs - User login tracking
 
-        // Navigation property
-        public User User { get; set; }
-    }
-
-    public class Payment
-    {
-        public int PaymentId { get; set; }
-        public int InvoiceId { get; set; }
-        public decimal Amount { get; set; }
-        public DateTime PaymentDate { get; set; }
-        public string PaymentMethod { get; set; }
-
-        public Invoice Invoice { get; set; }
-    }
-
-    public class Subscription
-    {
-        public int SubscriptionId { get; set; }
-        public string PlanName { get; set; }
-        public decimal Amount { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public bool IsActive { get; set; }
-    }
-}
+// All models are now defined in separate files for better organization
