@@ -7,11 +7,6 @@
         "Action": "Start",
         "DebugTarget": "https"
       },
-      {
-        "Path": "DRIYA.PlatformUI\\DRIYA.PlatformUI.csproj",
-        "Action": "Start",
-        "DebugTarget": "DRIYA.PlatformUI"
-      }
     ]
   },
   {

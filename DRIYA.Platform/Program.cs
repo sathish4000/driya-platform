@@ -96,7 +96,6 @@ public class Program
 
             // Add services to the container
             builder.Services.AddControllers();
-            builder.Services.AddControllersWithViews();
 
             // Add API documentation
             builder.Services.AddEndpointsApiExplorer();
@@ -213,9 +212,6 @@ public class Program
             app.UseMiddleware<TenantMiddleware>();
 
             app.MapControllers();
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
 
             // Configure SPA fallback routing
             app.MapFallbackToFile("index.html");
