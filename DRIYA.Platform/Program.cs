@@ -97,8 +97,11 @@ public class Program
             // Add services to the container
             builder.Services.AddControllers();
             
-            // Add database seeder
-            builder.Services.AddScoped<DatabaseSeeder>();
+// Add database seeder
+builder.Services.AddScoped<DatabaseSeeder>();
+
+// Add application services
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
 
             // Add API documentation
             builder.Services.AddEndpointsApiExplorer();
@@ -254,19 +257,47 @@ public class Program
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(globalAdmin, "GlobalAdmin");
-                Log.Information("Global admin user created successfully");
+                
+                // Give admin access to all applications
+                var applications = await context.Applications.ToListAsync();
+                foreach (var application in applications)
+                {
+                    var appAccess = new ApplicationUserAccess
+                    {
+                        Id = Guid.NewGuid(),
+                        ApplicationId = application.Id,
+                        UserId = globalAdmin.Id,
+                        Role = "GlobalAdmin",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    context.ApplicationUserAccess.Add(appAccess);
+                }
+                await context.SaveChangesAsync();
+                
+                Log.Information("Global admin user created successfully with access to all applications");
             }
         }
 
         // Create demo tenant if it doesn't exist
         if (!await context.Tenants.AnyAsync(t => t.TenantId == "demo"))
         {
+            // Get the default application (should exist from migration seeding)
+            var defaultApplication = await context.Applications.FirstOrDefaultAsync(a => a.AppKey == "platform");
+            if (defaultApplication == null)
+            {
+                Log.Warning("Default application not found. Skipping demo tenant creation.");
+                return;
+            }
+
             var demoTenant = new Tenant
             {
                 Name = "Demo Tenant",
                 TenantId = "demo",
                 Description = "Demo tenant for testing purposes",
                 ContactEmail = "demo@example.com",
+                ApplicationId = defaultApplication.Id, // Set the ApplicationId
                 IsActive = true,
                 IsTrialActive = true,
                 TrialEndDate = DateTime.UtcNow.AddDays(30),

@@ -18,10 +18,71 @@ public class FeatureController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Feature>>> GetAllFeatures()
+    public async Task<ActionResult<IEnumerable<Feature>>> GetAllFeatures([FromQuery] Guid? applicationId = null)
     {
-        var features = await _featureService.GetAllFeaturesAsync();
+        var features = applicationId.HasValue 
+            ? await _featureService.GetFeaturesByApplicationAsync(applicationId.Value)
+            : await _featureService.GetAllFeaturesAsync();
         return Ok(features);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "GlobalAdmin")]
+    public async Task<ActionResult<Feature>> CreateFeature([FromBody] CreateFeatureRequest request)
+    {
+        var feature = new Feature
+        {
+            Name = request.Name,
+            Description = request.Description,
+            FeatureKey = request.FeatureKey,
+            FeatureType = request.FeatureType,
+            DefaultValue = request.DefaultValue,
+            IsSystemFeature = request.IsSystemFeature,
+            ApplicationId = request.ApplicationId
+        };
+
+        var createdFeature = await _featureService.CreateFeatureAsync(feature);
+        return CreatedAtAction(nameof(GetFeature), new { id = createdFeature.Id }, createdFeature);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Feature>> GetFeature(Guid id)
+    {
+        var feature = await _featureService.GetFeatureByIdAsync(id);
+        if (feature == null)
+            return NotFound();
+
+        return Ok(feature);
+    }
+
+    [HttpPut("{id}")]
+    [Authorize(Roles = "GlobalAdmin")]
+    public async Task<ActionResult<Feature>> UpdateFeature(Guid id, [FromBody] UpdateFeatureRequest request)
+    {
+        var feature = await _featureService.GetFeatureByIdAsync(id);
+        if (feature == null)
+            return NotFound();
+
+        feature.Name = request.Name;
+        feature.Description = request.Description;
+        feature.FeatureKey = request.FeatureKey;
+        feature.FeatureType = request.FeatureType;
+        feature.DefaultValue = request.DefaultValue;
+        feature.IsSystemFeature = request.IsSystemFeature;
+
+        var updatedFeature = await _featureService.UpdateFeatureAsync(feature);
+        return Ok(updatedFeature);
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "GlobalAdmin")]
+    public async Task<ActionResult> DeleteFeature(Guid id)
+    {
+        var result = await _featureService.DeleteFeatureAsync(id);
+        if (!result)
+            return NotFound();
+
+        return NoContent();
     }
 
     [HttpGet("check/{featureKey}")]
@@ -107,4 +168,25 @@ public class SetFeatureFlagRequest
 {
     public string Value { get; set; } = string.Empty;
     public string? UserId { get; set; } // Optional: for user-specific overrides
+}
+
+public class CreateFeatureRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string FeatureKey { get; set; } = string.Empty;
+    public string FeatureType { get; set; } = "Boolean";
+    public string? DefaultValue { get; set; }
+    public bool IsSystemFeature { get; set; } = false;
+    public Guid ApplicationId { get; set; }
+}
+
+public class UpdateFeatureRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string FeatureKey { get; set; } = string.Empty;
+    public string FeatureType { get; set; } = "Boolean";
+    public string? DefaultValue { get; set; }
+    public bool IsSystemFeature { get; set; } = false;
 }

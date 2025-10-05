@@ -25,18 +25,25 @@ public class DatabaseSeeder
         // Ensure database is created
         await _context.Database.EnsureCreatedAsync();
 
-        // Create default tenant
-        var defaultTenant = await CreateDefaultTenantAsync();
+        // Create default tenant (for regular users)
+        await CreateDefaultTenantAsync();
 
-        // Create admin user
-        await CreateAdminUserAsync(defaultTenant.Id);
+        // Create admin user (Global Admin doesn't need a tenant)
+        await CreateAdminUserAsync();
     }
 
-    private async Task<Tenant> CreateDefaultTenantAsync()
+    private async Task CreateDefaultTenantAsync()
     {
         var existingTenant = _context.Tenants.FirstOrDefault(t => t.TenantId == "default");
         if (existingTenant != null)
-            return existingTenant;
+            return;
+
+        // Get the default application (should exist from migration seeding)
+        var defaultApplication = _context.Applications.FirstOrDefault(a => a.AppKey == "platform");
+        if (defaultApplication == null)
+        {
+            throw new InvalidOperationException("Default application not found. Please ensure database migrations are applied.");
+        }
 
         var tenant = new Tenant
         {
@@ -44,6 +51,7 @@ public class DatabaseSeeder
             TenantId = "default",
             Name = "Default Tenant",
             ContactEmail = "admin@driya.com",
+            ApplicationId = defaultApplication.Id, // Set the ApplicationId
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -51,16 +59,18 @@ public class DatabaseSeeder
 
         _context.Tenants.Add(tenant);
         await _context.SaveChangesAsync();
-
-        return tenant;
     }
 
-    private async Task CreateAdminUserAsync(Guid? tenantId)
+    private async Task CreateAdminUserAsync()
     {
         var adminEmail = "admin@driya.com";
         var existingUser = await _userManager.FindByEmailAsync(adminEmail);
         if (existingUser != null)
+        {
+            // Ensure admin has access to all applications
+            await EnsureAdminApplicationAccessAsync(existingUser);
             return;
+        }
 
         var adminUser = new ApplicationUser
         {
@@ -69,7 +79,7 @@ public class DatabaseSeeder
             Email = adminEmail,
             FirstName = "Admin",
             LastName = "User",
-            TenantId = tenantId,
+            TenantId = null, // Global Admin doesn't belong to a specific tenant
             IsActive = true,
             EmailConfirmed = true,
             CreatedAt = DateTime.UtcNow,
@@ -96,6 +106,41 @@ public class DatabaseSeeder
 
             // Assign GlobalAdmin role to admin user
             await _userManager.AddToRoleAsync(adminUser, "GlobalAdmin");
+
+            // Give admin access to all applications
+            await EnsureAdminApplicationAccessAsync(adminUser);
         }
+    }
+
+    private async Task EnsureAdminApplicationAccessAsync(ApplicationUser adminUser)
+    {
+        // Get all applications
+        var applications = _context.Applications.ToList();
+        
+        foreach (var application in applications)
+        {
+            // Check if admin already has access to this application
+            var existingAccess = _context.ApplicationUserAccess
+                .FirstOrDefault(aua => aua.UserId == adminUser.Id && aua.ApplicationId == application.Id);
+            
+            if (existingAccess == null)
+            {
+                // Create application access for admin
+                var appAccess = new ApplicationUserAccess
+                {
+                    Id = Guid.NewGuid(),
+                    ApplicationId = application.Id,
+                    UserId = adminUser.Id,
+                    Role = "GlobalAdmin", // Admin role for this specific application
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                
+                _context.ApplicationUserAccess.Add(appAccess);
+            }
+        }
+        
+        await _context.SaveChangesAsync();
     }
 }

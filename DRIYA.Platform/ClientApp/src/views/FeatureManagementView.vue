@@ -1,637 +1,479 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
+import { useApplicationStore } from '../stores/application'
+import axios from 'axios'
+
+// PrimeVue Components
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import Dialog from 'primevue/dialog'
+import Card from 'primevue/card'
+import Toolbar from 'primevue/toolbar'
+import Dropdown from 'primevue/dropdown'
+import Textarea from 'primevue/textarea'
+
+// Icons
 import { 
   PlusIcon, 
-  Cog6ToothIcon,
-  ArrowsRightLeftIcon,
-  CheckIcon,
-  XMarkIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  BuildingOfficeIcon,
-  UserIcon,
+  MagnifyingGlassIcon,
+  PencilIcon,
   TrashIcon
 } from '@heroicons/vue/24/outline'
 
-const isLoading = ref(false)
-const features = ref([])
-const featureFlags = ref([])
-const showCreateModal = ref(false)
-const selectedFeature = ref(null)
+const toast = useToast()
+const confirm = useConfirm()
+const applicationStore = useApplicationStore()
 
-// Form data
-const formData = ref({
-  key: '',
-  name: '',
-  description: '',
-  type: 'boolean',
-  defaultValue: 'true',
-  value: '',
-  level: 'system', // system, tenant, user
-  tenantId: '',
-  userId: ''
+// Data
+const features = ref([])
+const loading = ref(false)
+const selectedFeatures = ref([])
+const globalFilter = ref('')
+const filters = ref({
+  global: { value: null, matchMode: 'contains' },
+  name: { value: null, matchMode: 'startsWith' },
+  featureKey: { value: null, matchMode: 'contains' },
+  featureType: { value: null, matchMode: 'equals' }
 })
 
-const errors = ref<Record<string, string>>({})
+// Dialog states
+const featureDialog = ref(false)
+const deleteFeatureDialog = ref(false)
+const feature = ref({})
+const submitted = ref(false)
 
-const systemFeatures = computed(() => features.value.filter(f => f.type === 'system'))
-const tenantFeatures = computed(() => features.value.filter(f => f.type === 'tenant'))
-const userFeatures = computed(() => features.value.filter(f => f.type === 'user'))
+// Feature type options
+const featureTypes = ref([
+  { label: 'Boolean', value: 'Boolean' },
+  { label: 'String', value: 'String' },
+  { label: 'Number', value: 'Number' },
+  { label: 'JSON', value: 'JSON' }
+])
 
-const validateForm = () => {
-  errors.value = {}
-  
-  if (!formData.value.key) {
-    errors.value.key = 'Feature key is required'
+// Computed properties
+const hasSelectedFeatures = computed(() => selectedFeatures.value.length > 0)
+const currentApplication = computed(() => applicationStore.currentApplication)
+const currentApplicationId = computed(() => currentApplication.value?.id)
+
+// Methods
+const fetchFeatures = async () => {
+  if (!currentApplicationId.value) {
+    toast.add({ severity: 'warn', summary: 'No Application Selected', detail: 'Please select an application first', life: 3000 })
+    return
   }
-  
-  if (!formData.value.name) {
-    errors.value.name = 'Feature name is required'
+
+  try {
+    loading.value = true
+    const response = await axios.get(`/api/feature?applicationId=${currentApplicationId.value}`)
+    features.value = response.data
+  } catch (error: any) {
+    toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to fetch features', life: 3000 })
+  } finally {
+    loading.value = false
   }
-  
-  return Object.keys(errors.value).length === 0
 }
 
-const openCreateModal = () => {
-  formData.value = {
-    key: '',
+const openNew = () => {
+  if (!currentApplicationId.value) {
+    toast.add({ severity: 'warn', summary: 'No Application Selected', detail: 'Please select an application first', life: 3000 })
+    return
+  }
+
+  feature.value = {
     name: '',
     description: '',
-    type: 'boolean',
+    featureKey: '',
+    featureType: 'Boolean',
     defaultValue: 'true',
-    value: '',
-    level: 'system',
-    tenantId: '',
-    userId: ''
+    isSystemFeature: false,
+    applicationId: currentApplicationId.value
   }
-  errors.value = {}
-  showCreateModal.value = true
+  submitted.value = false
+  featureDialog.value = true
 }
 
-const handleCreate = async () => {
-  if (!validateForm()) return
+const hideDialog = () => {
+  featureDialog.value = false
+  submitted.value = false
+}
+
+const saveFeature = async () => {
+  submitted.value = true
   
-  try {
-    // Mock API call
-    const newFeature = {
-      id: Date.now().toString(),
-      ...formData.value,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+  if (feature.value.name && feature.value.featureKey) {
+    try {
+      if (feature.value.id) {
+        // Update feature
+        const response = await axios.put(`/api/feature/${feature.value.id}`, feature.value)
+        const updatedFeature = response.data
+        
+        const index = features.value.findIndex(f => f.id === feature.value.id)
+        if (index !== -1) {
+          features.value[index] = updatedFeature
+        }
+        
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Feature Updated', life: 3000 })
+      } else {
+        // Create new feature
+        const response = await axios.post('/api/feature', feature.value)
+        const newFeature = response.data
+        
+        features.value.push(newFeature)
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Feature Created', life: 3000 })
+      }
+      featureDialog.value = false
+      feature.value = {}
+    } catch (error: any) {
+      toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to save feature', life: 3000 })
     }
+  }
+}
+
+const editFeature = (selectedFeature) => {
+  feature.value = { ...selectedFeature }
+  featureDialog.value = true
+}
+
+const confirmDeleteFeature = (selectedFeature) => {
+  feature.value = selectedFeature
+  deleteFeatureDialog.value = true
+}
+
+const deleteFeature = async () => {
+  try {
+    await axios.delete(`/api/feature/${feature.value.id}`)
     
-    features.value.push(newFeature)
-    showCreateModal.value = false
-  } catch (error) {
-    console.error('Failed to create feature:', error)
+    features.value = features.value.filter(f => f.id !== feature.value.id)
+    deleteFeatureDialog.value = false
+    feature.value = {}
+    toast.add({ severity: 'success', summary: 'Success', detail: 'Feature Deleted', life: 3000 })
+  } catch (error: any) {
+    toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to delete feature', life: 3000 })
   }
 }
 
-const toggleFeature = async (feature) => {
-  try {
-    // Mock API call
-    feature.value = feature.value === 'true' ? 'false' : 'true'
-    feature.updatedAt = new Date().toISOString()
-  } catch (error) {
-    console.error('Failed to toggle feature:', error)
-  }
-}
-
-const deleteFeature = async (featureId) => {
-  try {
-    // Mock API call
-    features.value = features.value.filter(f => f.id !== featureId)
-  } catch (error) {
-    console.error('Failed to delete feature:', error)
-  }
-}
-
-const getFeatureIcon = (feature) => {
-  return feature.value === 'true' ? CheckIcon : XMarkIcon
-}
-
-const getFeatureColor = (feature) => {
-  return feature.value === 'true' ? 'text-green-600' : 'text-red-600'
-}
-
-const getFeatureBadge = (feature) => {
-  return feature.value === 'true' 
-    ? { text: 'Enabled', class: 'bg-green-100 text-green-800' }
-    : { text: 'Disabled', class: 'bg-red-100 text-red-800' }
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+const confirmDeleteSelected = () => {
+  confirm.require({
+    message: 'Are you sure you want to delete the selected features?',
+    header: 'Confirm Deletion',
+    icon: 'pi pi-exclamation-triangle',
+    accept: async () => {
+      try {
+        for (const feat of selectedFeatures.value) {
+          await axios.delete(`/api/feature/${feat.id}`)
+        }
+        features.value = features.value.filter(f => !selectedFeatures.value.includes(f))
+        selectedFeatures.value = []
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Features Deleted', life: 3000 })
+      } catch (error: any) {
+        toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to delete features', life: 3000 })
+      }
+    }
   })
 }
 
-onMounted(async () => {
-  isLoading.value = true
-  try {
-    // Mock data
-    features.value = [
-      {
-        id: '1',
-        key: 'advanced_analytics',
-        name: 'Advanced Analytics',
-        description: 'Enable advanced analytics dashboard',
-        type: 'boolean',
-        defaultValue: 'true',
-        value: 'true',
-        level: 'system',
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: '2',
-        key: 'api_rate_limiting',
-        name: 'API Rate Limiting',
-        description: 'Enable rate limiting for API calls',
-        type: 'boolean',
-        defaultValue: 'true',
-        value: 'false',
-        level: 'tenant',
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: '3',
-        key: 'custom_branding',
-        name: 'Custom Branding',
-        description: 'Allow tenants to customize branding',
-        type: 'boolean',
-        defaultValue: 'false',
-        value: 'true',
-        level: 'tenant',
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: '4',
-        key: 'max_users',
-        name: 'Maximum Users',
-        description: 'Maximum number of users per tenant',
-        type: 'number',
-        defaultValue: '10',
-        value: '25',
-        level: 'tenant',
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
-      }
-    ]
-  } catch (error) {
-    console.error('Failed to fetch features:', error)
-  } finally {
-    isLoading.value = false
+const getFeatureTypeTagSeverity = (type) => {
+  switch (type) {
+    case 'Boolean': return 'success'
+    case 'String': return 'info'
+    case 'Number': return 'warning'
+    case 'JSON': return 'danger'
+    default: return 'info'
   }
+}
+
+// Watch for application changes
+const watchApplication = () => {
+  if (currentApplicationId.value) {
+    fetchFeatures()
+  } else {
+    features.value = []
+  }
+}
+
+onMounted(() => {
+  watchApplication()
 })
+
+// Watch for application changes
+import { watch } from 'vue'
+watch(currentApplicationId, watchApplication)
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-6">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="mb-8">
-        <div class="flex justify-between items-center">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900">Feature Management</h1>
-            <p class="mt-2 text-gray-600">Manage feature flags and system capabilities</p>
-          </div>
-          <button
-            @click="openCreateModal"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <PlusIcon class="h-4 w-4 mr-2" />
-            Add Feature
-          </button>
+  <div class="p-6">
+    <!-- Application Selection Notice -->
+    <div v-if="!currentApplication" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
         </div>
-      </div>
-
-      <!-- Feature Categories -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- System Features -->
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <Cog6ToothIcon class="h-5 w-5 inline mr-2 text-blue-600" />
-              System Features
-            </h3>
-            <div class="space-y-3">
-              <div v-for="feature in systemFeatures" :key="feature.id" class="flex items-center justify-between p-3 border border-gray-200 rounded-md">
-                <div class="flex-1">
-                  <div class="flex items-center">
-                    <component :is="getFeatureIcon(feature)" class="h-4 w-4 mr-2" :class="getFeatureColor(feature)" />
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">{{ feature.name }}</p>
-                      <p class="text-xs text-gray-500">{{ feature.description }}</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        :class="getFeatureBadge(feature).class">
-                    {{ getFeatureBadge(feature).text }}
-                  </span>
-                  <button
-                    @click="toggleFeature(feature)"
-                    class="text-gray-400 hover:text-gray-600"
-                  >
-                    <ArrowsRightLeftIcon class="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div v-if="systemFeatures.length === 0" class="text-center py-4 text-gray-500">
-                No system features configured
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tenant Features -->
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <BuildingOfficeIcon class="h-5 w-5 inline mr-2 text-green-600" />
-              Tenant Features
-            </h3>
-            <div class="space-y-3">
-              <div v-for="feature in tenantFeatures" :key="feature.id" class="flex items-center justify-between p-3 border border-gray-200 rounded-md">
-                <div class="flex-1">
-                  <div class="flex items-center">
-                    <component :is="getFeatureIcon(feature)" class="h-4 w-4 mr-2" :class="getFeatureColor(feature)" />
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">{{ feature.name }}</p>
-                      <p class="text-xs text-gray-500">{{ feature.description }}</p>
-                      <p v-if="feature.type === 'number'" class="text-xs text-blue-600">Value: {{ feature.value }}</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        :class="getFeatureBadge(feature).class">
-                    {{ getFeatureBadge(feature).text }}
-                  </span>
-                  <button
-                    @click="toggleFeature(feature)"
-                    class="text-gray-400 hover:text-gray-600"
-                  >
-                    <ArrowsRightLeftIcon class="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div v-if="tenantFeatures.length === 0" class="text-center py-4 text-gray-500">
-                No tenant features configured
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- User Features -->
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <UserIcon class="h-5 w-5 inline mr-2 text-purple-600" />
-              User Features
-            </h3>
-            <div class="space-y-3">
-              <div v-for="feature in userFeatures" :key="feature.id" class="flex items-center justify-between p-3 border border-gray-200 rounded-md">
-                <div class="flex-1">
-                  <div class="flex items-center">
-                    <component :is="getFeatureIcon(feature)" class="h-4 w-4 mr-2" :class="getFeatureColor(feature)" />
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">{{ feature.name }}</p>
-                      <p class="text-xs text-gray-500">{{ feature.description }}</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        :class="getFeatureBadge(feature).class">
-                    {{ getFeatureBadge(feature).text }}
-                  </span>
-                  <button
-                    @click="toggleFeature(feature)"
-                    class="text-gray-400 hover:text-gray-600"
-                  >
-                    <ArrowsRightLeftIcon class="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div v-if="userFeatures.length === 0" class="text-center py-4 text-gray-500">
-                No user features configured
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Feature Flags Table -->
-      <div class="mt-8 bg-white shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">All Feature Flags</h3>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Feature
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Level
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Updated
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="feature in features" :key="feature.id" class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div class="text-sm font-medium text-gray-900">{{ feature.name }}</div>
-                      <div class="text-sm text-gray-500">{{ feature.key }}</div>
-                      <div class="text-xs text-gray-400">{{ feature.description }}</div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {{ feature.type }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          :class="{
-                            'bg-blue-100 text-blue-800': feature.level === 'system',
-                            'bg-green-100 text-green-800': feature.level === 'tenant',
-                            'bg-purple-100 text-purple-800': feature.level === 'user'
-                          }">
-                      {{ feature.level }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          :class="getFeatureBadge(feature).class">
-                      {{ getFeatureBadge(feature).text }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ formatDate(feature.updatedAt) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div class="flex space-x-2">
-                      <button
-                        @click="toggleFeature(feature)"
-                        class="text-blue-600 hover:text-blue-900"
-                      >
-                        <ArrowsRightLeftIcon class="h-4 w-4" />
-                      </button>
-                      <button
-                        @click="deleteFeature(feature.id)"
-                        class="text-red-600 hover:text-red-900"
-                      >
-                        <TrashIcon class="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Create Feature Modal -->
-      <div v-if="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-          <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Create Feature Flag</h3>
-            
-            <form @submit.prevent="handleCreate">
-              <div class="space-y-4">
-                <!-- Feature Key -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Feature Key</label>
-                  <input
-                    v-model="formData.key"
-                    type="text"
-                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="e.g., advanced_analytics"
-                  />
-                  <p v-if="errors.key" class="mt-1 text-sm text-red-600">{{ errors.key }}</p>
-                </div>
-
-                <!-- Name -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    v-model="formData.name"
-                    type="text"
-                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Advanced Analytics"
-                  />
-                  <p v-if="errors.name" class="mt-1 text-sm text-red-600">{{ errors.name }}</p>
-                </div>
-
-                <!-- Description -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    v-model="formData.description"
-                    rows="3"
-                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enable advanced analytics dashboard"
-                  ></textarea>
-                </div>
-
-                <!-- Type -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Type</label>
-                  <select
-                    v-model="formData.type"
-                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="boolean">Boolean</option>
-                    <option value="number">Number</option>
-                    <option value="string">String</option>
-                  </select>
-                </div>
-
-                <!-- Level -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Level</label>
-                  <select
-                    v-model="formData.level"
-                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="system">System</option>
-                    <option value="tenant">Tenant</option>
-                    <option value="user">User</option>
-                  </select>
-                </div>
-
-                <!-- Default Value -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Default Value</label>
-                  <input
-                    v-model="formData.defaultValue"
-                    :type="formData.type === 'number' ? 'number' : 'text'"
-                    class="mt-1 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div class="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  @click="showCreateModal = false"
-                  class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-yellow-800">No Application Selected</h3>
+          <div class="mt-2 text-sm text-yellow-700">
+            <p>Please select an application from the dropdown in the top right to manage its features.</p>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Current Application Info -->
+    <div v-if="currentApplication" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="flex items-center">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-4" :style="{ backgroundColor: currentApplication.primaryColor || '#3b82f6' }">
+          <i :class="currentApplication.icon || 'pi pi-cog'" class="text-white text-lg"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-blue-900">{{ currentApplication.name }}</h3>
+          <p class="text-sm text-blue-700">Managing features for {{ currentApplication.appKey }}</p>
+        </div>
+      </div>
+    </div>
+
+    <Card class="shadow-sm border border-gray-200">
+      <template #title>
+        <Toolbar class="mb-4 border-0 p-0">
+          <template #start>
+            <h2 class="text-2xl font-bold text-gray-900">Feature Management</h2>
+            <span v-if="currentApplication" class="ml-2 text-sm text-gray-500">for {{ currentApplication.name }}</span>
+          </template>
+          <template #end>
+            <Button 
+              label="New Feature" 
+              icon="pi pi-plus" 
+              severity="primary" 
+              class="p-button-sm" 
+              @click="openNew"
+              :disabled="!currentApplication"
+            />
+          </template>
+        </Toolbar>
+      </template>
+      <template #content>
+        <DataTable 
+          :value="features" 
+          v-model:selection="selectedFeatures" 
+          dataKey="id" 
+          :paginator="true" 
+          :rows="10" 
+          :rowsPerPageOptions="[5, 10, 25]"
+          :loading="loading" 
+          :filters="filters" 
+          filterDisplay="menu" 
+          :globalFilterFields="['name', 'featureKey', 'featureType']"
+          class="p-datatable-sm"
+        >
+          <template #header>
+            <div class="flex flex-wrap gap-2 items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <Button 
+                  label="Delete Selected" 
+                  icon="pi pi-trash" 
+                  severity="danger" 
+                  class="p-button-sm" 
+                  @click="confirmDeleteSelected" 
+                  :disabled="!hasSelectedFeatures" 
+                />
+              </div>
+              <div class="relative">
+                <span class="p-input-icon-left">
+                  <MagnifyingGlassIcon class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <InputText 
+                    v-model="filters['global'].value" 
+                    placeholder="Global Search" 
+                    class="pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </span>
+              </div>
+            </div>
+          </template>
+          <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+          <Column field="name" header="Name" sortable style="min-width: 12rem">
+            <template #body="{ data }">
+              <div class="font-medium text-gray-900">{{ data.name }}</div>
+              <div class="text-sm text-gray-500">{{ data.featureKey }}</div>
+            </template>
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Search by name" class="p-column-filter" />
+            </template>
+          </Column>
+          <Column field="description" header="Description" sortable style="min-width: 16rem">
+            <template #body="{ data }">
+              <div class="text-gray-600">{{ data.description || 'No description' }}</div>
+            </template>
+          </Column>
+          <Column field="featureType" header="Type" sortable style="min-width: 10rem">
+            <template #body="{ data }">
+              <Tag :value="data.featureType" :severity="getFeatureTypeTagSeverity(data.featureType)" />
+            </template>
+            <template #filter="{ filterModel, filterCallback }">
+              <Dropdown v-model="filterModel.value" :options="featureTypes" optionLabel="label" optionValue="value" placeholder="Select a Type" class="p-column-filter" @change="filterCallback()" />
+            </template>
+          </Column>
+          <Column field="defaultValue" header="Default Value" sortable style="min-width: 10rem">
+            <template #body="{ data }">
+              <div class="text-gray-600">{{ data.defaultValue || 'Not set' }}</div>
+            </template>
+          </Column>
+          <Column field="isSystemFeature" header="System Feature" sortable style="min-width: 10rem">
+            <template #body="{ data }">
+              <Tag :value="data.isSystemFeature ? 'Yes' : 'No'" :severity="data.isSystemFeature ? 'success' : 'info'" />
+            </template>
+          </Column>
+          <Column field="createdAt" header="Created" sortable style="min-width: 10rem">
+            <template #body="{ data }">
+              <div class="text-gray-600">{{ new Date(data.createdAt).toLocaleDateString() }}</div>
+            </template>
+          </Column>
+          <Column :exportable="false" header="Actions" style="min-width: 8rem">
+            <template #body="{ data }">
+              <div class="flex space-x-2">
+                <Button icon="pi pi-pencil" severity="info" text rounded @click="editFeature(data)" />
+                <Button icon="pi pi-trash" severity="danger" text rounded @click="confirmDeleteFeature(data)" />
+              </div>
+            </template>
+          </Column>
+        </DataTable>
+      </template>
+    </Card>
+
+    <!-- Feature Create/Edit Dialog -->
+    <Dialog 
+      v-model:visible="featureDialog" 
+      :style="{ width: '600px' }" 
+      :header="feature.id ? 'Edit Feature' : 'Create Feature'" 
+      :modal="true" 
+      class="p-fluid"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-field">
+          <label for="name" class="font-semibold mb-2 block">Name *</label>
+          <InputText 
+            id="name" 
+            v-model.trim="feature.name" 
+            required="true" 
+            autofocus 
+            :class="{ 'p-invalid': submitted && !feature.name }" 
+          />
+          <small class="p-error" v-if="submitted && !feature.name">Name is required.</small>
+        </div>
+        
+        <div class="p-field">
+          <label for="featureKey" class="font-semibold mb-2 block">Feature Key *</label>
+          <InputText 
+            id="featureKey" 
+            v-model.trim="feature.featureKey" 
+            required="true" 
+            :class="{ 'p-invalid': submitted && !feature.featureKey }" 
+          />
+          <small class="p-error" v-if="submitted && !feature.featureKey">Feature Key is required.</small>
+        </div>
+        
+        <div class="p-field md:col-span-2">
+          <label for="description" class="font-semibold mb-2 block">Description</label>
+          <Textarea 
+            id="description" 
+            v-model.trim="feature.description" 
+            placeholder="Enter feature description"
+            rows="3"
+          />
+        </div>
+        
+        <div class="p-field">
+          <label for="featureType" class="font-semibold mb-2 block">Type</label>
+          <Dropdown 
+            id="featureType" 
+            v-model="feature.featureType" 
+            :options="featureTypes" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select a Type" 
+          />
+        </div>
+        
+        <div class="p-field">
+          <label for="defaultValue" class="font-semibold mb-2 block">Default Value</label>
+          <InputText 
+            id="defaultValue" 
+            v-model.trim="feature.defaultValue" 
+            placeholder="true, false, or other value"
+          />
+        </div>
+        
+        <div class="p-field">
+          <label class="font-semibold mb-2 block">System Feature</label>
+          <div class="flex items-center">
+            <input 
+              type="checkbox" 
+              v-model="feature.isSystemFeature" 
+              class="mr-2"
+            />
+            <span class="text-sm text-gray-600">This is a system-wide feature</span>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button label="Cancel" icon="pi pi-times" text @click="hideDialog" />
+        <Button label="Save" icon="pi pi-check" text @click="saveFeature" />
+      </template>
+    </Dialog>
+
+    <!-- Feature Delete Dialog -->
+    <Dialog 
+      v-model:visible="deleteFeatureDialog" 
+      :style="{ width: '450px' }" 
+      header="Confirm" 
+      :modal="true"
+    >
+      <div class="flex items-center justify-center">
+        <i class="pi pi-exclamation-triangle mr-3 text-4xl text-red-500" />
+        <span v-if="feature">Are you sure you want to delete <b>{{ feature.name }}</b>?</span>
+      </div>
+      <template #footer>
+        <Button label="No" icon="pi pi-times" text @click="deleteFeatureDialog = false" />
+        <Button label="Yes" icon="pi pi-check" text @click="deleteFeature" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
 <style scoped>
-/* Additional utility classes */
-.grid { display: grid; }
-.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-.gap-6 { gap: 1.5rem; }
+/* Custom styles for better integration */
+:deep(.p-datatable .p-datatable-header) {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
 
-.lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  background-color: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+}
 
-.overflow-hidden { overflow: hidden; }
-.overflow-x-auto { overflow-x: auto; }
-.shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
-.rounded-lg { border-radius: 0.5rem; }
-.rounded-md { border-radius: 0.375rem; }
-.rounded-full { border-radius: 9999px; }
+:deep(.p-datatable .p-datatable-tbody > tr) {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s ease-in-out;
+}
 
-.px-4 { padding-left: 1rem; padding-right: 1rem; }
-.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
-.py-5 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
-.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
-.p-3 { padding: 0.75rem; }
+:deep(.p-datatable .p-datatable-tbody > tr:hover) {
+  background-color: #f9fafb;
+}
 
-.mb-4 { margin-bottom: 1rem; }
-.mb-8 { margin-bottom: 2rem; }
-.mt-8 { margin-top: 2rem; }
-.mt-6 { margin-top: 1.5rem; }
-.ml-2 { margin-left: 0.5rem; }
-.mr-2 { margin-right: 0.5rem; }
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-3 { margin-top: 0.75rem; }
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  color: #111827;
+}
 
-.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
-.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
-.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-.text-xs { font-size: 0.75rem; line-height: 1rem; }
-
-.font-bold { font-weight: 700; }
-.font-medium { font-weight: 500; }
-
-.text-gray-900 { color: #111827; }
-.text-gray-600 { color: #4b5563; }
-.text-gray-500 { color: #6b7280; }
-.text-gray-400 { color: #9ca3af; }
-.text-blue-600 { color: #2563eb; }
-.text-green-600 { color: #059669; }
-.text-purple-600 { color: #7c3aed; }
-.text-red-600 { color: #dc2626; }
-.text-green-800 { color: #166534; }
-.text-red-800 { color: #991b1b; }
-.text-blue-800 { color: #1e40af; }
-.text-purple-800 { color: #5b21b6; }
-.text-gray-800 { color: #1f2937; }
-
-.bg-white { background-color: #ffffff; }
-.bg-gray-50 { background-color: #f9fafb; }
-.bg-blue-600 { background-color: #2563eb; }
-.bg-green-100 { background-color: #dcfce7; }
-.bg-red-100 { background-color: #fee2e2; }
-.bg-blue-100 { background-color: #dbeafe; }
-.bg-purple-100 { background-color: #f3e8ff; }
-.bg-gray-100 { background-color: #f3f4f6; }
-
-.border-gray-300 { border-color: #d1d5db; }
-.border-gray-200 { border-color: #e5e7eb; }
-
-.border { border-width: 1px; }
-
-.flex { display: flex; }
-.inline-flex { display: inline-flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-end { justify-content: flex-end; }
-.space-x-2 > * + * { margin-left: 0.5rem; }
-.space-x-3 > * + * { margin-left: 0.75rem; }
-.space-y-3 > * + * { margin-top: 0.75rem; }
-.space-y-4 > * + * { margin-top: 1rem; }
-
-.h-4 { height: 1rem; }
-.h-5 { height: 1.25rem; }
-.w-4 { width: 1rem; }
-.w-5 { width: 1.25rem; }
-.w-96 { width: 24rem; }
-
-.whitespace-nowrap { white-space: nowrap; }
-
-.relative { position: relative; }
-.absolute { position: absolute; }
-.fixed { position: fixed; }
-.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-.top-20 { top: 5rem; }
-.z-50 { z-index: 50; }
-
-.divide-y > * + * { border-top-width: 1px; border-top-color: #e5e7eb; }
-.divide-gray-200 > * + * { border-top-color: #e5e7eb; }
-
-.min-w-full { min-width: 100%; }
-
-.hover\:bg-gray-50:hover { background-color: #f9fafb; }
-.hover\:bg-blue-700:hover { background-color: #1d4ed8; }
-.hover\:bg-gray-50:hover { background-color: #f9fafb; }
-.hover\:text-blue-900:hover { color: #1e3a8a; }
-.hover\:text-red-900:hover { color: #7f1d1d; }
-.hover\:text-gray-600:hover { color: #4b5563; }
-
-.focus\:ring-blue-500:focus { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-.focus\:border-blue-500:focus { border-color: #3b82f6; }
-
-.bg-opacity-50 { background-color: rgba(75, 85, 99, 0.5); }
-
-.overflow-y-auto { overflow-y: auto; }
-
-.inline { display: inline; }
-
-@media (min-width: 1024px) {
-  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+:deep(.p-datatable .p-paginator) {
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
 }
 </style>

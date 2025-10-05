@@ -104,7 +104,66 @@ public class FeatureService : IFeatureService
 
     public async Task<IEnumerable<Feature>> GetAllFeaturesAsync()
     {
-        return await _context.Features.ToListAsync();
+        return await _context.Features
+            .Include(f => f.FeatureFlags)
+            .Include(f => f.Application)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Feature>> GetFeaturesByApplicationAsync(Guid applicationId)
+    {
+        return await _context.Features
+            .Include(f => f.FeatureFlags)
+            .Include(f => f.Application)
+            .Where(f => f.ApplicationId == applicationId)
+            .ToListAsync();
+    }
+
+    public async Task<Feature?> GetFeatureByIdAsync(Guid id)
+    {
+        return await _context.Features
+            .Include(f => f.FeatureFlags)
+            .Include(f => f.Application)
+            .FirstOrDefaultAsync(f => f.Id == id);
+    }
+
+    public async Task<Feature> CreateFeatureAsync(Feature feature)
+    {
+        feature.CreatedAt = DateTime.UtcNow;
+        feature.UpdatedAt = DateTime.UtcNow;
+
+        _context.Features.Add(feature);
+        await _context.SaveChangesAsync();
+        return feature;
+    }
+
+    public async Task<Feature> UpdateFeatureAsync(Feature feature)
+    {
+        feature.UpdatedAt = DateTime.UtcNow;
+
+        _context.Features.Update(feature);
+        await _context.SaveChangesAsync();
+        return feature;
+    }
+
+    public async Task<bool> DeleteFeatureAsync(Guid id)
+    {
+        var feature = await _context.Features.FindAsync(id);
+        if (feature == null)
+        {
+            return false;
+        }
+
+        // Check if feature has flags
+        var hasFlags = await _context.FeatureFlags.AnyAsync(ff => ff.FeatureId == id);
+        if (hasFlags)
+        {
+            return false; // Cannot delete feature with existing flags
+        }
+
+        _context.Features.Remove(feature);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     public async Task<IEnumerable<FeatureFlag>> GetTenantFeatureFlagsAsync(Guid tenantId)

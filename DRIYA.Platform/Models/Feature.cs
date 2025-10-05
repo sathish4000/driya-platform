@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace DRIYA.Platform.Models;
 
@@ -10,6 +12,9 @@ public class Feature
     [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
+    
+    [Required]
+    public Guid ApplicationId { get; set; }
     
     [StringLength(500)]
     public string? Description { get; set; }
@@ -35,6 +40,12 @@ public class Feature
     public string? UpdatedBy { get; set; }
     
     // Navigation properties
+    [ForeignKey(nameof(ApplicationId))]
+    [JsonIgnore]
+    public virtual Application Application { get; set; } = null!;
+    
+    [JsonIgnore]
     public virtual ICollection<FeatureFlag> FeatureFlags { get; set; } = new List<FeatureFlag>();
+    [JsonIgnore]
     public virtual ICollection<PlanFeature> PlanFeatures { get; set; } = new List<PlanFeature>();
 }

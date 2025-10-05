@@ -1,0 +1,3 @@
+@echo off
+echo Starting DRIYA Platform...
+dotnet run --project DRIYA.Platform/DRIYA.Platform.csproj

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace DRIYA.Platform.Models;
 
@@ -34,11 +35,14 @@ public class FeatureFlag
     
     // Navigation properties
     [ForeignKey(nameof(FeatureId))]
+    [JsonIgnore]
     public virtual Feature Feature { get; set; } = null!;
     
     [ForeignKey(nameof(TenantId))]
+    [JsonIgnore]
     public virtual Tenant? Tenant { get; set; }
     
     [ForeignKey(nameof(UserId))]
+    [JsonIgnore]
     public virtual ApplicationUser? User { get; set; }
 }

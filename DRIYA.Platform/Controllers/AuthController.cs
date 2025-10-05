@@ -161,7 +161,7 @@ public class AuthController : ControllerBase
                 role = userRoles.FirstOrDefault() ?? "User",
                 tenantId = user.TenantId,
                 isActive = user.IsActive,
-                lastLoginAt = user.LastLoginAt
+                lastLoginAt = (DateTime?)null // LastLoginAt property doesn't exist in our ApplicationUser model
             });
         }
         catch (Exception ex)

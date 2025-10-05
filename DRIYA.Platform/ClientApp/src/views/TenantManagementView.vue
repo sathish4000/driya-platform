@@ -274,6 +274,9 @@ onMounted(async () => {
                   Tenant
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Application
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -301,6 +304,18 @@ onMounted(async () => {
                       <div class="text-sm text-gray-500">{{ tenant.tenantId }}</div>
                     </div>
                   </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div v-if="tenant.application" class="flex items-center">
+                    <div class="w-6 h-6 rounded flex items-center justify-center mr-2" :style="{ backgroundColor: tenant.application.primaryColor || '#3b82f6' }">
+                      <i :class="tenant.application.icon || 'pi pi-cog'" class="text-white text-xs"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">{{ tenant.application.name }}</div>
+                      <div class="text-xs text-gray-500">{{ tenant.application.appKey }}</div>
+                    </div>
+                  </div>
+                  <div v-else class="text-sm text-gray-500">No Application</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"

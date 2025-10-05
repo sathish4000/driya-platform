@@ -2,6 +2,9 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
+import Tooltip from 'primevue/tooltip'
 import App from './App.vue'
 import './assets/main.css'
 
@@ -19,6 +22,7 @@ import FeatureManagementView from './views/FeatureManagementView.vue'
 import BillingView from './views/BillingView.vue'
 import ApiKeyManagementView from './views/ApiKeyManagementView.vue'
 import AdminDashboardView from './views/AdminDashboardView.vue'
+import ApplicationManagementView from './views/ApplicationManagementView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 // Create Pinia store
@@ -29,6 +33,9 @@ const app = createApp(App)
 
 // Configure PrimeVue
 app.use(PrimeVue)
+app.use(ToastService)
+app.use(ConfirmationService)
+app.directive('tooltip', Tooltip)
 
 // Create router
 const router = createRouter({
@@ -45,16 +52,26 @@ const router = createRouter({
         description: 'Overview of your platform activity and metrics'
       } 
     },
-    { 
-      path: '/admin', 
-      component: AdminDashboardView, 
-      meta: { 
-        requiresAuth: true, 
-        requiresAdmin: true,
-        title: 'Admin Dashboard',
-        description: 'System administration and monitoring'
-      } 
-    },
+           { 
+             path: '/admin', 
+             component: AdminDashboardView, 
+             meta: { 
+               requiresAuth: true, 
+               requiresAdmin: true,
+               title: 'Admin Dashboard',
+               description: 'System administration and monitoring'
+             } 
+           },
+           { 
+             path: '/applications', 
+             component: ApplicationManagementView, 
+             meta: { 
+               requiresAuth: true, 
+               requiresAdmin: true,
+               title: 'Application Management',
+               description: 'Manage applications and their features'
+             } 
+           },
     { 
       path: '/tenants', 
       component: TenantManagementView, 

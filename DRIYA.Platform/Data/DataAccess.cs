@@ -13,7 +13,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Role, str
     }
 
     // Multi-tenant models
+    public DbSet<Application> Applications { get; set; }
     public DbSet<Tenant> Tenants { get; set; }
+    public DbSet<ApplicationUserAccess> ApplicationUserAccess { get; set; }
     
     // RBAC models
     public DbSet<Permission> Permissions { get; set; }
@@ -131,6 +133,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Role, str
 
     private void ConfigureIndexes(ModelBuilder builder)
     {
+        // Application indexes
+        builder.Entity<Application>()
+            .HasIndex(a => a.AppKey)
+            .IsUnique();
+
+        builder.Entity<Application>()
+            .HasIndex(a => a.Subdomain)
+            .IsUnique();
+
         // Tenant indexes
         builder.Entity<Tenant>()
             .HasIndex(t => t.TenantId)
@@ -187,6 +198,25 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Role, str
 
     private void ConfigureRelationships(ModelBuilder builder)
     {
+        // Application relationships
+        builder.Entity<Application>()
+            .HasMany(a => a.Tenants)
+            .WithOne(t => t.Application)
+            .HasForeignKey(t => t.ApplicationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Application>()
+            .HasMany(a => a.Features)
+            .WithOne(f => f.Application)
+            .HasForeignKey(f => f.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Application>()
+            .HasMany(a => a.ApplicationUsers)
+            .WithOne(au => au.Application)
+            .HasForeignKey(au => au.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Tenant relationships
         builder.Entity<Tenant>()
             .HasMany(t => t.Users)
@@ -309,6 +339,24 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Role, str
 
     private void SeedData(ModelBuilder builder)
     {
+        // Seed default application
+        var defaultApp = new Application
+        {
+            Id = Guid.NewGuid(),
+            Name = "DRIYA Platform",
+            Description = "Default platform application",
+            AppKey = "platform",
+            Subdomain = "app",
+            IsActive = true,
+            Status = "Active",
+            Icon = "pi pi-cog",
+            PrimaryColor = "#3b82f6",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        builder.Entity<Application>().HasData(defaultApp);
+
         // Seed system roles
         var globalAdminRole = new Role
         {
@@ -438,14 +486,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Role, str
         // Seed features
         var features = new List<Feature>
         {
-            new() { Id = Guid.NewGuid(), Name = "Basic Analytics", FeatureKey = "basic_analytics", FeatureType = "Boolean", DefaultValue = "true", IsSystemFeature = true },
-            new() { Id = Guid.NewGuid(), Name = "Advanced Analytics", FeatureKey = "advanced_analytics", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
-            new() { Id = Guid.NewGuid(), Name = "Custom Branding", FeatureKey = "custom_branding", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
-            new() { Id = Guid.NewGuid(), Name = "API Access", FeatureKey = "api_access", FeatureType = "Boolean", DefaultValue = "true", IsSystemFeature = true },
-            new() { Id = Guid.NewGuid(), Name = "White Label", FeatureKey = "white_label", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
-            new() { Id = Guid.NewGuid(), Name = "Priority Support", FeatureKey = "priority_support", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
-            new() { Id = Guid.NewGuid(), Name = "SSO Integration", FeatureKey = "sso_integration", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
-            new() { Id = Guid.NewGuid(), Name = "Advanced Security", FeatureKey = "advanced_security", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true }
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "Basic Analytics", FeatureKey = "basic_analytics", FeatureType = "Boolean", DefaultValue = "true", IsSystemFeature = true },
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "Advanced Analytics", FeatureKey = "advanced_analytics", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "Custom Branding", FeatureKey = "custom_branding", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "API Access", FeatureKey = "api_access", FeatureType = "Boolean", DefaultValue = "true", IsSystemFeature = true },
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "White Label", FeatureKey = "white_label", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "Priority Support", FeatureKey = "priority_support", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "SSO Integration", FeatureKey = "sso_integration", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true },
+            new() { Id = Guid.NewGuid(), ApplicationId = defaultApp.Id, Name = "Advanced Security", FeatureKey = "advanced_security", FeatureType = "Boolean", DefaultValue = "false", IsSystemFeature = true }
         };
 
         builder.Entity<Feature>().HasData(features);

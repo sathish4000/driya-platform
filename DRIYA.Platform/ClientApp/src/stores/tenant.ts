@@ -22,6 +22,15 @@ export interface Tenant {
   maxUsers?: number
   maxStorageGB?: number
   features: string[]
+  // Application information
+  applicationId?: string
+  application?: {
+    id: string
+    name: string
+    appKey: string
+    icon?: string
+    primaryColor?: string
+  }
 }
 
 export interface CreateTenantRequest {

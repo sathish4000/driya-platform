@@ -2,6 +2,38 @@
 
 DRIYA is a comprehensive multi-tenant SaaS platform that provides reusable components and foundational services such as authentication, tenant/user management, licensing, and billing.
 
+## 🚀 Quick Start
+
+### Running the Application
+
+You can run the application from the solution folder using any of these methods:
+
+**Option 1: Using the PowerShell script (Recommended)**
+```powershell
+.\run.ps1
+```
+
+**Option 2: Using the batch file**
+```cmd
+run.bat
+```
+
+**Option 3: Using dotnet directly**
+```bash
+dotnet run --project DRIYA.Platform/DRIYA.Platform.csproj
+```
+
+**Option 4: From the project folder**
+```bash
+cd DRIYA.Platform
+dotnet run
+```
+
+### Default Login Credentials
+- **Email**: `admin@driya.com`
+- **Password**: `Admin123!`
+- **Role**: Global Admin (access to all applications)
+
 ## 🚀 Features
 
 ### 1.1 Authentication and User Management

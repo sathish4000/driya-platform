@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace DRIYA.Platform.Models;
 
@@ -15,6 +16,9 @@ public class Tenant
     [Required]
     [StringLength(50)]
     public string TenantId { get; set; } = string.Empty; // Unique identifier like "studiodash"
+    
+    [Required]
+    public Guid ApplicationId { get; set; }
     
     [StringLength(200)]
     public string? Description { get; set; }
@@ -61,13 +65,24 @@ public class Tenant
     public string? UpdatedBy { get; set; }
     
     // Navigation properties
+    [ForeignKey(nameof(ApplicationId))]
+    [JsonIgnore]
+    public virtual Application Application { get; set; } = null!;
+    
+    [JsonIgnore]
     public virtual ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
+    [JsonIgnore]
     public virtual ICollection<FeatureFlag> FeatureFlags { get; set; } = new List<FeatureFlag>();
+    [JsonIgnore]
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+    [JsonIgnore]
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    [JsonIgnore]
     public virtual ICollection<TenantDatabase> TenantDatabases { get; set; } = new List<TenantDatabase>();
+    [JsonIgnore]
     public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
     
     [ForeignKey(nameof(CurrentPlanId))]
+    [JsonIgnore]
     public virtual LicensePlan? CurrentPlan { get; set; }
 }

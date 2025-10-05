@@ -3,6 +3,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useTenantStore } from './stores/tenant'
+import { useApplicationStore } from './stores/application'
+import TenabillLogo from './components/TenabillLogo.vue'
 
 // PrimeVue Components
 import Sidebar from 'primevue/sidebar'
@@ -24,11 +26,14 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const tenantStore = useTenantStore()
+const applicationStore = useApplicationStore()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const currentUser = computed(() => authStore.user)
 const currentTenant = computed(() => tenantStore.currentTenant)
+const currentApplication = computed(() => applicationStore.currentApplication)
+const applications = computed(() => applicationStore.applications)
 
 // Responsive state
 const sidebarVisible = ref(false)
@@ -94,27 +99,33 @@ const mainNavigationItems = computed(() => {
     }
   ]
 
-  // Admin-only items
-  if (isAdmin.value) {
-    items.splice(1, 0, {
-      label: 'Administration',
-      icon: 'pi pi-shield',
-      items: [
-        {
-          label: 'Admin Dashboard',
-          icon: 'pi pi-chart-bar',
-          route: '/admin',
-          requiresAuth: true
-        },
-        {
-          label: 'Tenants',
-          icon: 'pi pi-building',
-          route: '/tenants',
-          requiresAuth: true
-        }
-      ]
-    })
-  }
+         // Admin-only items
+         if (isAdmin.value) {
+           items.splice(1, 0, {
+             label: 'Administration',
+             icon: 'pi pi-shield',
+             items: [
+               {
+                 label: 'Admin Dashboard',
+                 icon: 'pi pi-chart-bar',
+                 route: '/admin',
+                 requiresAuth: true
+               },
+               {
+                 label: 'Applications',
+                 icon: 'pi pi-th-large',
+                 route: '/applications',
+                 requiresAuth: true
+               },
+               {
+                 label: 'Tenants',
+                 icon: 'pi pi-building',
+                 route: '/tenants',
+                 requiresAuth: true
+               }
+             ]
+           })
+         }
 
   return items
 })
@@ -218,14 +229,20 @@ watch(route, () => {
   }
 })
 
-onMounted(async () => {
-  checkScreenSize()
-  window.addEventListener('resize', checkScreenSize)
-  
-  if (isAuthenticated.value) {
-    await tenantStore.fetchCurrentTenant()
-  }
-})
+       onMounted(async () => {
+         checkScreenSize()
+         window.addEventListener('resize', checkScreenSize)
+         
+         if (isAuthenticated.value) {
+           await tenantStore.fetchCurrentTenant()
+           
+           // Load applications and selected application for Global Admins
+           if (isAdmin.value) {
+             await applicationStore.fetchApplications()
+             applicationStore.loadSelectedApplication()
+           }
+         }
+       })
 </script>
 
 <template>
@@ -249,16 +266,13 @@ onMounted(async () => {
         position="left"
         v-if="isMobile"
       >
-        <template #header>
-          <div class="flex items-center justify-between p-4">
-            <div class="flex items-center">
-              <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-sm">D</span>
-              </div>
-              <span class="ml-3 text-lg font-semibold text-gray-900">DRIYA Platform</span>
-            </div>
-          </div>
-        </template>
+               <template #header>
+                 <div class="flex items-center justify-center p-4">
+                   <div class="flex items-center">
+                     <TenabillLogo :size="28" color="#1f2937" align="center" class="mx-auto" />
+                   </div>
+                 </div>
+               </template>
 
         <div class="p-4">
           <!-- Tenant Info -->
@@ -310,13 +324,10 @@ onMounted(async () => {
         <!-- Desktop Sidebar (Hidden on mobile) -->
         <aside v-if="!isMobile" class="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
           <div class="flex flex-col flex-grow bg-white border-r border-gray-200 shadow-sm">
-            <!-- Logo -->
-            <div class="flex items-center px-6 py-4 border-b border-gray-200">
-              <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-sm">D</span>
-              </div>
-              <span class="ml-3 text-lg font-semibold text-gray-900">DRIYA Platform</span>
-            </div>
+                   <!-- Logo -->
+                   <div class="flex justify-center px-6 py-4 border-b border-gray-200">
+                     <TenabillLogo :size="32" color="#1f2937" align="center" class="mx-auto" />
+                   </div>
 
             <!-- Tenant Info -->
             <div v-if="currentTenant" class="p-4 border-b border-gray-200">
@@ -389,19 +400,52 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <!-- Right side -->
-              <div class="flex items-center space-x-3">
-                <!-- Search (Desktop only) -->
-                <div class="hidden lg:block relative">
-                  <div class="relative">
-                    <input 
-                      type="text" 
-                      placeholder="Search..."
-                      class="w-72 pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-50 focus:bg-white transition-all duration-200"
-                    />
-                    <MagnifyingGlassIcon class="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
+                     <!-- Right side -->
+                     <div class="flex items-center space-x-3">
+                       <!-- App Selector (Global Admin only) -->
+                       <div v-if="isAdmin" class="hidden lg:block">
+                         <Dropdown 
+                           v-model="currentApplication" 
+                           :options="applications" 
+                           optionLabel="name" 
+                           placeholder="Select App"
+                           class="w-48"
+                           @change="applicationStore.selectApplication($event.value)"
+                         >
+                           <template #value="slotProps">
+                             <div v-if="slotProps.value" class="flex items-center">
+                               <div class="w-6 h-6 rounded flex items-center justify-center mr-2" :style="{ backgroundColor: slotProps.value.primaryColor || '#3b82f6' }">
+                                 <i :class="slotProps.value.icon || 'pi pi-cog'" class="text-white text-xs"></i>
+                               </div>
+                               <span class="text-sm font-medium">{{ slotProps.value.name }}</span>
+                             </div>
+                             <span v-else class="text-gray-500">Select App</span>
+                           </template>
+                           <template #option="slotProps">
+                             <div class="flex items-center">
+                               <div class="w-6 h-6 rounded flex items-center justify-center mr-3" :style="{ backgroundColor: slotProps.option.primaryColor || '#3b82f6' }">
+                                 <i :class="slotProps.option.icon || 'pi pi-cog'" class="text-white text-xs"></i>
+                               </div>
+                               <div>
+                                 <div class="font-medium">{{ slotProps.option.name }}</div>
+                                 <div class="text-xs text-gray-500">{{ slotProps.option.appKey }}</div>
+                               </div>
+                             </div>
+                           </template>
+                         </Dropdown>
+                       </div>
+
+                       <!-- Search (Desktop only) -->
+                       <div class="hidden lg:block relative">
+                         <div class="relative">
+                           <input 
+                             type="text" 
+                             placeholder="Search..."
+                             class="w-72 pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-50 focus:bg-white transition-all duration-200"
+                           />
+                           <MagnifyingGlassIcon class="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                         </div>
+                       </div>
 
                 <!-- Notifications -->
                 <Button 
