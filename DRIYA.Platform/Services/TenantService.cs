@@ -17,23 +17,17 @@ public class TenantService : ITenantService
 
     public async Task<Tenant?> GetTenantByIdAsync(Guid id)
     {
-        return await _context.Tenants
-            .Include(t => t.CurrentPlan)
-            .FirstOrDefaultAsync(t => t.Id == id);
+        return await _context.Tenants.FindAsync(id);
     }
 
     public async Task<Tenant?> GetTenantByTenantIdAsync(string tenantId)
     {
-        return await _context.Tenants
-            .Include(t => t.CurrentPlan)
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId);
+        return await _context.Tenants.FirstOrDefaultAsync(t => t.TenantId == tenantId);
     }
 
     public async Task<IEnumerable<Tenant>> GetAllTenantsAsync()
     {
-        return await _context.Tenants
-            .Include(t => t.CurrentPlan)
-            .ToListAsync();
+        return await _context.Tenants.ToListAsync();
     }
 
     public async Task<Tenant> CreateTenantAsync(Tenant tenant)
@@ -65,16 +59,17 @@ public class TenantService : ITenantService
 
     public async Task<bool> IsTenantActiveAsync(string tenantId)
     {
-        return await _context.Tenants
-            .AnyAsync(t => t.TenantId == tenantId && t.IsActive);
+        var tenant = await GetTenantByTenantIdAsync(tenantId);
+        return tenant != null && tenant.IsActive;
     }
 
     public async Task<Tenant?> GetCurrentTenantAsync()
     {
         var tenantId = _httpContextAccessor.HttpContext?.Request.Headers["X-Tenant-ID"].FirstOrDefault();
         if (string.IsNullOrEmpty(tenantId))
+        {
             return null;
-
+        }
         return await GetTenantByTenantIdAsync(tenantId);
     }
 }

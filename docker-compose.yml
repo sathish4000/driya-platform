@@ -9,13 +9,13 @@ services:
       dockerfile: DRIYA.Platform/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__PostgreSQLConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__SQLServerConnection=Server=sqlserver;Database=driya_db;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true
       - Redis__ConnectionString=redis:6379
     ports:
       - "8080:8080" # HTTP port
       - "8081:8081" # HTTPS port (optional)
     depends_on:
-      - postgres
+      - sqlserver
       - redis
 
   # Frontend service (React/Vue/Angular)
@@ -32,18 +32,18 @@ services:
     depends_on:
       - driya.platform
 
-  # PostgreSQL database service
-  postgres:
-    image: postgres:latest
-    container_name: driya_postgres
+  # SQL Server database service
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: driya_sqlserver
     ports:
-      - "5432:5432"
+      - "1433:1433"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB: ${POSTGRES_DB:-driya_db}
+      ACCEPT_EULA: Y
+      SA_PASSWORD: YourStrong@Passw0rd
+      MSSQL_PID: Express
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Persistent volume for database data
+      - sqlserver_data:/var/opt/mssql # Persistent volume for database data
 
   # Redis service
   redis:
@@ -56,4 +56,4 @@ services:
       - REDIS_LOG_LEVEL=notice # Set optional log level for Redis
 
 volumes:
-  postgres_data:
+  sqlserver_data:

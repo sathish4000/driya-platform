@@ -6,6 +6,9 @@ using DRIYA.Platform.Middleware;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace DRIYA.Platform;
 
@@ -131,9 +134,17 @@ public class Program
             })
             .AddJwtBearer("Bearer", options =>
             {
-                options.Authority = builder.Configuration["Jwt:Authority"];
-                options.Audience = builder.Configuration["Jwt:Audience"];
-                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong!"))
+                };
             });
 
             // Add authorization
@@ -162,6 +173,20 @@ public class Program
             builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 
             var app = builder.Build();
+
+            // Do not run migrations automatically in the EF tool context
+            if (!EF.IsDesignTime)
+            {
+                // Ensure database is created and migrated
+                using (var scope = app.Services.CreateScope())
+                {
+                    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    context.Database.Migrate();
+                    
+                    // Seed initial data if needed
+                    await SeedInitialDataAsync(context, scope.ServiceProvider);
+                }
+            }
 
             // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment())
@@ -192,15 +217,8 @@ public class Program
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
 
-            // Ensure database is created and migrated
-            using (var scope = app.Services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                context.Database.Migrate();
-                
-                // Seed initial data if needed
-                await SeedInitialDataAsync(context, scope.ServiceProvider);
-            }
+            // Configure SPA fallback routing
+            app.MapFallbackToFile("index.html");
 
             app.Run();
         }

@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using DRIYA.PlatformUI.Models;
 using System.Diagnostics;
 
-namespace DRIYA.PlatformUI.Controllers
+namespace DRIYA.Platform.Controllers
 {
     public class HomeController : Controller
     {
@@ -15,7 +14,8 @@ namespace DRIYA.PlatformUI.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            // Serve the SPA index.html for the root route
+            return PhysicalFile(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "index.html"), "text/html");
         }
 
         public IActionResult Privacy()
@@ -26,7 +26,7 @@ namespace DRIYA.PlatformUI.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return View(new { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

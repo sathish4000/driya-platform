@@ -96,18 +96,18 @@ public class ApiKeyController : ControllerBase
     }
 
     [HttpGet("{id:guid}/usage")]
-    public async Task<ActionResult<object>> GetApiKeyUsage(Guid id)
+    public Task<ActionResult<object>> GetApiKeyUsage(Guid id)
     {
         // This would require additional service method to get usage statistics
         // For now, return a placeholder
-        return Ok(new
+        return Task.FromResult<ActionResult<object>>(Ok(new
         {
             ApiKeyId = id,
             TotalUsage = 0,
             MonthlyUsage = 0,
             LastUsed = DateTime.UtcNow,
             UsageHistory = new object[0]
-        });
+        }));
     }
 }
 

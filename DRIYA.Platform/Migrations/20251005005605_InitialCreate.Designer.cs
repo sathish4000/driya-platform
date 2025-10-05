@@ -4,6 +4,7 @@ using DRIYA.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DRIYA.Platform.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251005005605_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -315,8 +318,8 @@ namespace DRIYA.Platform.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("ef2c5c4a-6fab-4055-a7a5-d33b5c1752cd"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1081),
+                            Id = new Guid("9a37e1b8-fdb7-435d-aecf-6115fdce8b14"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(3627),
                             DefaultValue = "true",
                             FeatureKey = "basic_analytics",
                             FeatureType = "Boolean",
@@ -326,8 +329,8 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("474bdbcb-358d-4c75-a00b-d2b3742c3072"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1746),
+                            Id = new Guid("db861713-9542-485a-a2c5-360fe77b1fdf"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(4334),
                             DefaultValue = "false",
                             FeatureKey = "advanced_analytics",
                             FeatureType = "Boolean",
@@ -337,8 +340,8 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("642f405e-7179-4f73-a316-ccb48927e8aa"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1749),
+                            Id = new Guid("b5a75ae9-5dd2-4a57-a9b8-c8689b61978c"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(4338),
                             DefaultValue = "false",
                             FeatureKey = "custom_branding",
                             FeatureType = "Boolean",
@@ -348,8 +351,8 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("e7c2d432-c741-4bb7-a858-5f0c66c09e82"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1751),
+                            Id = new Guid("1a6b74ca-26f2-4cb6-9754-2e15327e527f"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(4340),
                             DefaultValue = "true",
                             FeatureKey = "api_access",
                             FeatureType = "Boolean",
@@ -359,8 +362,8 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("bc010147-be82-4537-a679-2b143338bbaa"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1756),
+                            Id = new Guid("af0626f4-b2ab-4df5-afd4-8ad42e0ab077"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(4342),
                             DefaultValue = "false",
                             FeatureKey = "white_label",
                             FeatureType = "Boolean",
@@ -370,8 +373,8 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("c49ca594-fab4-45f0-ae36-c7ac3dc9ba3d"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1759),
+                            Id = new Guid("cbe71b91-78cd-437b-baf5-8f523427074d"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(4351),
                             DefaultValue = "false",
                             FeatureKey = "priority_support",
                             FeatureType = "Boolean",
@@ -381,8 +384,8 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("3a3141d1-9e63-4297-a668-3472d7b1fb3c"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1761),
+                            Id = new Guid("a9f94f1e-ff56-48b5-92e6-fa6ef0a85398"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(4352),
                             DefaultValue = "false",
                             FeatureKey = "sso_integration",
                             FeatureType = "Boolean",
@@ -392,8 +395,8 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("aa78daee-4db0-4d36-a847-20a646b940ae"),
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(1763),
+                            Id = new Guid("5c4af8b1-64ca-405c-94bd-93fe437bd12b"),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(4355),
                             DefaultValue = "false",
                             FeatureKey = "advanced_security",
                             FeatureType = "Boolean",
@@ -662,9 +665,9 @@ namespace DRIYA.Platform.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("6e070922-2105-4ac9-811e-543794cee64d"),
+                            Id = new Guid("ea64641f-dc97-43a0-b28b-90fb5ac8367b"),
                             AllowTrial = true,
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(272),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(2542),
                             Currency = "USD",
                             Description = "Basic plan for small teams",
                             IsActive = true,
@@ -680,9 +683,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("6c148d42-ec9c-4129-83a0-9ff252b306a2"),
+                            Id = new Guid("d0f16e34-e034-490f-9aec-1600d5ef3d76"),
                             AllowTrial = true,
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(377),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(2651),
                             Currency = "USD",
                             Description = "Professional plan for growing businesses",
                             IsActive = true,
@@ -698,9 +701,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("581ce298-6dea-43de-b010-59afc9edc083"),
+                            Id = new Guid("0697f369-4ac9-44c2-a762-9a711f5fc9f5"),
                             AllowTrial = true,
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 191, DateTimeKind.Utc).AddTicks(380),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 81, DateTimeKind.Utc).AddTicks(2655),
                             Currency = "USD",
                             Description = "Premium plan for enterprise customers",
                             IsActive = true,
@@ -823,7 +826,7 @@ namespace DRIYA.Platform.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TransactionFeePercentage")
-                        .HasColumnType("decimal(5,4)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -985,9 +988,9 @@ namespace DRIYA.Platform.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("01bcb4db-89c3-4e4a-806b-d754a98d35e6"),
+                            Id = new Guid("3870f6ea-a502-4aa5-8d28-a405d136b797"),
                             Action = "Create",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(6611),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8017),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "User Management",
@@ -995,9 +998,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("3c0e6b33-8895-4eea-8fe6-2848c80aaf99"),
+                            Id = new Guid("f7c160b9-2138-4f74-b6c3-50eca1423528"),
                             Action = "Read",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7348),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8858),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "User Management",
@@ -1005,9 +1008,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("7802fe7f-cbbf-4097-9888-419c8be1a67a"),
+                            Id = new Guid("8de5754e-9b63-4ddf-9de2-0a6c756f6934"),
                             Action = "Update",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7351),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8870),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "User Management",
@@ -1015,9 +1018,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("39ae8dfa-3c18-4593-952f-2403f1850ce9"),
+                            Id = new Guid("7ec4d941-225b-4c6b-8e2e-9a7e64e47183"),
                             Action = "Delete",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7363),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8872),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "User Management",
@@ -1025,9 +1028,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("5ce41b31-1b4b-4519-b9ce-220176c810e1"),
+                            Id = new Guid("fb38fa8e-940f-4046-b748-82ff293f33e0"),
                             Action = "Create",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7365),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8874),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Tenant Management",
@@ -1035,9 +1038,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("17d23ce4-ca84-4e7c-b1e3-f2b7365de65a"),
+                            Id = new Guid("77ba2224-e6a1-4d5b-88d9-23b551c351a5"),
                             Action = "Read",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7373),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8903),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Tenant Management",
@@ -1045,9 +1048,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("b9d9ace2-da38-4805-9db3-ad7580f84092"),
+                            Id = new Guid("1f82b577-a00a-42c0-af35-9a781e00e9fb"),
                             Action = "Update",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7374),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8906),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Tenant Management",
@@ -1055,9 +1058,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("1d893d87-8a06-4d78-b883-6683aa5043e3"),
+                            Id = new Guid("8d79dd95-228f-4fac-bb70-591e31351178"),
                             Action = "Delete",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7376),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8908),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Tenant Management",
@@ -1065,9 +1068,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("d5b5cfcd-5166-4d25-9317-352bf4e13778"),
+                            Id = new Guid("ac6cd512-1db7-4129-930c-841046ee2d6d"),
                             Action = "Create",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7378),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8909),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Billing Management",
@@ -1075,9 +1078,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("5131c2e7-0207-455a-8ce9-3fcd271f3708"),
+                            Id = new Guid("2c31d2ca-8211-4a42-a2d8-60f5b72a501b"),
                             Action = "Read",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7381),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8912),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Billing Management",
@@ -1085,9 +1088,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("ce84a851-1611-498a-93c9-cfbc674a3109"),
+                            Id = new Guid("acc83e75-9e4d-45ca-a5aa-8577a4f3007e"),
                             Action = "Update",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7383),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8915),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Billing Management",
@@ -1095,9 +1098,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("9ca1e39f-3648-4aa9-8dc8-28218dd06ecb"),
+                            Id = new Guid("e7bb773f-1d47-46fb-9c72-fa64bb268c2a"),
                             Action = "Create",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7385),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8938),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Feature Management",
@@ -1105,9 +1108,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("2b52c9ce-ecf5-42f6-87be-bea249f8766a"),
+                            Id = new Guid("01986367-0b38-438a-9f44-15eab7fdd50e"),
                             Action = "Read",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7386),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8940),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Feature Management",
@@ -1115,9 +1118,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("08a5a665-81b3-422e-8efd-49c085ff59e7"),
+                            Id = new Guid("9ac9bb7e-8e91-41d7-a994-2df6de4bcd22"),
                             Action = "Update",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7408),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8942),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "Feature Management",
@@ -1125,9 +1128,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("011cd43a-db77-419f-ac20-150ad613d212"),
+                            Id = new Guid("5b739450-06d5-4fd9-bea5-30fbda2217b7"),
                             Action = "Create",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7410),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8945),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "API Key Management",
@@ -1135,9 +1138,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("286acb41-bca4-4974-81d9-5b776a656b33"),
+                            Id = new Guid("2f7d79a8-90ec-4b08-a69b-2db15bea8ac8"),
                             Action = "Read",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7411),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8946),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "API Key Management",
@@ -1145,9 +1148,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("ca6f156a-ce9b-4834-ae9e-76c3496f864a"),
+                            Id = new Guid("1c79f572-eefb-4492-89b5-d5971db791ac"),
                             Action = "Update",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7413),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8948),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "API Key Management",
@@ -1155,9 +1158,9 @@ namespace DRIYA.Platform.Migrations
                         },
                         new
                         {
-                            Id = new Guid("874899cb-2792-45cd-8415-7fe05a8c28ec"),
+                            Id = new Guid("47133edf-f7a0-4715-9150-098b5bf08a2d"),
                             Action = "Delete",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(7417),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(8950),
                             IsActive = true,
                             IsSystemPermission = true,
                             Name = "API Key Management",
@@ -1269,7 +1272,7 @@ namespace DRIYA.Platform.Migrations
                         new
                         {
                             Id = "1",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(830),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(1344),
                             Description = "Global system administrator with full access",
                             HierarchyLevel = 0,
                             IsActive = true,
@@ -1280,7 +1283,7 @@ namespace DRIYA.Platform.Migrations
                         new
                         {
                             Id = "2",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(1018),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(1533),
                             Description = "Tenant administrator with full tenant access",
                             HierarchyLevel = 1,
                             IsActive = true,
@@ -1291,7 +1294,7 @@ namespace DRIYA.Platform.Migrations
                         new
                         {
                             Id = "3",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(1023),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(1543),
                             Description = "Manager with limited administrative access",
                             HierarchyLevel = 2,
                             IsActive = true,
@@ -1302,7 +1305,7 @@ namespace DRIYA.Platform.Migrations
                         new
                         {
                             Id = "4",
-                            CreatedAt = new DateTime(2025, 10, 5, 1, 8, 30, 190, DateTimeKind.Utc).AddTicks(1028),
+                            CreatedAt = new DateTime(2025, 10, 5, 0, 56, 5, 80, DateTimeKind.Utc).AddTicks(1553),
                             Description = "Standard user with basic access",
                             HierarchyLevel = 3,
                             IsActive = true,

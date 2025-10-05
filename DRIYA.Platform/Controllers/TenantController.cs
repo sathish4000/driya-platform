@@ -89,14 +89,14 @@ public class TenantController : ControllerBase
         return Ok(updatedTenant);
     }
 
-    [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "GlobalAdmin")]
-    public async Task<ActionResult> DeleteTenant(Guid id)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTenant(Guid id)
     {
         var success = await _tenantService.DeleteTenantAsync(id);
         if (!success)
+        {
             return NotFound();
-
+        }
         return NoContent();
     }
 

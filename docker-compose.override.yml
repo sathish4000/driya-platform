@@ -31,18 +31,17 @@ services:
       - /app/.npm          # Cache directory
     command: ["npm", "run", "dev"]
 
-  # (Optional) PostgreSQL override for development, if desired:
-  # postgres:
+  # (Optional) SQL Server override for development, if desired:
+  # sqlserver:
   #   environment:
-  #     POSTGRES_USER: dev_user
-  #     POSTGRES_PASSWORD: dev_pass
-  #     POSTGRES_DB: driya_db_dev
+  #     SA_PASSWORD: YourStrong@Passw0rd
+  #     MSSQL_PID: Express
   #   volumes:
-  #     - ./postgres-dev-data:/var/lib/postgresql/data
+  #     - ./sqlserver-dev-data:/var/opt/mssql
 
   # (Optional) Redis override for development, if additional logging is needed:
   # redis:
   #   command: ["redis-server", "--loglevel", "debug"]
   
 # volumes:
-#   postgres_data:
+#   sqlserver_data:

@@ -6,12 +6,10 @@ namespace DRIYA.Platform.Middleware;
 public class TenantMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ITenantService _tenantService;
 
-    public TenantMiddleware(RequestDelegate next, ITenantService tenantService)
+    public TenantMiddleware(RequestDelegate next)
     {
         _next = next;
-        _tenantService = tenantService;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -21,9 +19,12 @@ public class TenantMiddleware
         
         if (!string.IsNullOrEmpty(tenantId))
         {
+            // Resolve the scoped service from the request scope
+            var tenantService = context.RequestServices.GetRequiredService<ITenantService>();
+            
             // Validate tenant and set context
-            var tenant = await _tenantService.GetTenantByTenantIdAsync(tenantId);
-            if (tenant != null && tenant.IsActive)
+            var tenant = await tenantService.GetTenantByTenantIdAsync(tenantId);
+            if (tenant != null)
             {
                 context.Items["CurrentTenant"] = tenant;
                 context.Items["TenantId"] = tenant.Id;

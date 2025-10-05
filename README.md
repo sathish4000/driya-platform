@@ -45,6 +45,8 @@ DRIYA is a comprehensive multi-tenant SaaS platform that provides reusable compo
 
 ### Technology Stack
 - **Backend**: ASP.NET Core 9.0 with Entity Framework Core
+- **Frontend**: Vue 3 with TypeScript, Vite, Vue Router, and Pinia
+- **UI Framework**: Tailwind CSS with Headless UI components
 - **Authentication**: ASP.NET Core Identity with custom multi-tenant support
 - **Database**: PostgreSQL (primary) / SQL Server (secondary)
 - **Caching**: Redis for performance optimization
@@ -55,6 +57,18 @@ DRIYA is a comprehensive multi-tenant SaaS platform that provides reusable compo
 
 ```
 DRIYA.Platform/
+├── ClientApp/             # Vue.js Frontend Application
+│   ├── src/
+│   │   ├── assets/        # Static assets
+│   │   ├── components/    # Reusable Vue components
+│   │   ├── stores/        # Pinia state management
+│   │   ├── views/         # Page components
+│   │   ├── App.vue        # Root component
+│   │   └── main.ts        # App entry point
+│   ├── index.html         # HTML template
+│   ├── package.json       # NPM dependencies
+│   ├── vite.config.ts     # Vite configuration
+│   └── README.md          # Frontend documentation
 ├── Controllers/           # API Controllers
 │   ├── TenantController.cs
 │   ├── FeatureController.cs
@@ -85,6 +99,7 @@ DRIYA.Platform/
 │   └── ApiKeyService.cs
 ├── Middleware/            # Custom Middleware
 │   └── TenantMiddleware.cs
+├── wwwroot/               # Static files (built frontend)
 └── Program.cs            # Application startup
 ```
 
@@ -92,6 +107,7 @@ DRIYA.Platform/
 
 ### Prerequisites
 - .NET 9.0 SDK
+- Node.js 18+ and npm 9+
 - PostgreSQL or SQL Server
 - Redis (optional, for caching)
 
@@ -122,14 +138,42 @@ DRIYA.Platform/
    dotnet ef database update
    ```
 
-4. **Start the application**
+4. **Install frontend dependencies** (optional, auto-installed on build)
+   ```bash
+   cd ClientApp
+   npm install
+   cd ..
+   ```
+
+5. **Start the application**
    ```bash
    dotnet run
    ```
 
-5. **Access the API**
-   - API Documentation: https://localhost:7096/swagger
+6. **Access the application**
+   - Application: https://localhost:7001/
+   - API Documentation: https://localhost:7001/swagger
    - Default Admin: admin@driya.com / Admin123!
+
+### Frontend Development
+
+For frontend development with hot-reload:
+
+1. **Terminal 1 - Start .NET Backend**:
+   ```bash
+   cd DRIYA.Platform
+   dotnet run
+   ```
+
+2. **Terminal 2 - Start Vue Dev Server**:
+   ```bash
+   cd DRIYA.Platform/ClientApp
+   npm run dev
+   ```
+
+The Vite dev server will run on `http://localhost:3000` with API proxy to the backend.
+
+See [ClientApp/README.md](DRIYA.Platform/ClientApp/README.md) for detailed frontend documentation.
 
 ## 🔧 Configuration
 

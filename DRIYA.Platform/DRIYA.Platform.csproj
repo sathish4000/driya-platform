@@ -5,6 +5,9 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>driya-platform-12345</UserSecretsId>
+		<SpaRoot>ClientApp\</SpaRoot>
+		<SpaProxyServerUrl>http://localhost:3000</SpaProxyServerUrl>
+		<SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -25,13 +28,48 @@
 		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.0" />
-		    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
+		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="9.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\DRIYA.Common\DRIYA.Common.csproj" />
 	</ItemGroup>
+
+	<!-- Exclude ClientApp files from build -->
+	<ItemGroup>
+		<Content Remove="$(SpaRoot)**" />
+		<None Remove="$(SpaRoot)**" />
+		<None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
+	</ItemGroup>
+
+	<!-- Build ClientApp on publish -->
+	<Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+		<Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
+		<Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+
+		<!-- Include the newly-built files in the publish output -->
+		<ItemGroup>
+			<DistFiles Include="wwwroot\**" />
+			<ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+				<RelativePath>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</RelativePath>
+				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+				<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+			</ResolvedFileToPublish>
+		</ItemGroup>
+	</Target>
+
+	<!-- Build ClientApp during development build -->
+	<Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
+		<!-- Ensure Node.js is installed -->
+		<Exec Command="node --version" ContinueOnError="true">
+			<Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+		</Exec>
+		<Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
+		<Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
+		<Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
+	</Target>
 
 </Project>

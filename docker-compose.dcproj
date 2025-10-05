@@ -28,8 +28,10 @@
 		<None Include="clear-docker-cache.ps1" />
 	</ItemGroup>
 
-	<!-- Pre-build target to clear Docker cache -->
+	<!-- Pre-build target to clear Docker cache - DISABLED -->
+	<!--
 	<Target Name="DockerPreBuild" BeforeTargets="PreBuildEvent">
-		<Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(SolutionDir)clear-docker-cache.ps1&quot;" />
+		<Exec Command="powershell -ExecutionPolicy Bypass -File &quot;clear-docker-cache.ps1&quot;" />
 	</Target>
+	-->
 </Project>

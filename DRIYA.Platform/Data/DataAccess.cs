@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using DRIYA.Platform.Models;
+using DRIYA.Platform.Services;
 
 namespace DRIYA.Platform.Data;
 
@@ -44,12 +45,19 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Role, str
     
     // Legacy models - removed to avoid conflicts with Identity
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.ConfigureWarnings(warnings => 
+            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
-        // Configure multi-tenant filtering
-        ConfigureMultiTenancy(builder);
+        
+        // Configure decimal properties
+        ConfigureDecimalProperties(builder);
         
         // Configure indexes
         ConfigureIndexes(builder);
@@ -61,16 +69,64 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Role, str
         SeedData(builder);
     }
 
-    private void ConfigureMultiTenancy(ModelBuilder builder)
+    private void ConfigureDecimalProperties(ModelBuilder builder)
     {
-        // Add global query filter for multi-tenancy
-        builder.Entity<ApplicationUser>().HasQueryFilter(e => e.IsActive);
-        builder.Entity<Tenant>().HasQueryFilter(e => e.IsActive);
-        builder.Entity<Role>().HasQueryFilter(e => e.IsActive);
-        builder.Entity<Permission>().HasQueryFilter(e => e.IsActive);
-        builder.Entity<LicensePlan>().HasQueryFilter(e => e.IsActive);
-        builder.Entity<Feature>().HasQueryFilter(e => e.IsActive);
-        builder.Entity<ApiKey>().HasQueryFilter(e => e.IsActive);
+        // Configure Invoice decimal properties
+        builder.Entity<Invoice>()
+            .Property(i => i.DiscountAmount)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<Invoice>()
+            .Property(i => i.Subtotal)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<Invoice>()
+            .Property(i => i.TaxAmount)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<Invoice>()
+            .Property(i => i.TotalAmount)
+            .HasColumnType("decimal(18,2)");
+
+        // Configure InvoiceItem decimal properties
+        builder.Entity<InvoiceItem>()
+            .Property(ii => ii.UnitPrice)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<InvoiceItem>()
+            .Property(ii => ii.TotalPrice)
+            .HasColumnType("decimal(18,2)");
+
+        // Configure LicensePlan decimal properties
+        builder.Entity<LicensePlan>()
+            .Property(lp => lp.MonthlyPrice)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<LicensePlan>()
+            .Property(lp => lp.YearlyPrice)
+            .HasColumnType("decimal(18,2)");
+
+        // Configure PaymentGateway decimal properties
+        builder.Entity<PaymentGateway>()
+            .Property(pg => pg.TransactionFeeFixed)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<PaymentGateway>()
+            .Property(pg => pg.TransactionFeePercentage)
+            .HasColumnType("decimal(5,4)"); // For percentages like 2.5%
+
+        // Configure PaymentTransaction decimal properties
+        builder.Entity<PaymentTransaction>()
+            .Property(pt => pt.Amount)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<PaymentTransaction>()
+            .Property(pt => pt.GatewayFee)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Entity<PaymentTransaction>()
+            .Property(pt => pt.PlatformFee)
+            .HasColumnType("decimal(18,2)");
     }
 
     private void ConfigureIndexes(ModelBuilder builder)
