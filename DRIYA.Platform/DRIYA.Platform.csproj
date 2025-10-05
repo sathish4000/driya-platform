@@ -43,6 +43,55 @@
 		<None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
 	</ItemGroup>
 
+	<!-- Clean wwwroot directory before build -->
+	<Target Name="CleanWwwroot" BeforeTargets="Build">
+		<Message Importance="high" Text="Cleaning wwwroot directory..." />
+		<!-- Remove all files and subdirectories in wwwroot -->
+		<ItemGroup>
+			<WwwrootFiles Include="wwwroot\**\*" />
+		</ItemGroup>
+		<Delete Files="@(WwwrootFiles)" Condition="Exists('wwwroot')" />
+		<RemoveDir Directories="wwwroot" Condition="Exists('wwwroot')" />
+		<MakeDir Directories="wwwroot" />
+		<Message Importance="high" Text="wwwroot directory cleaned successfully." />
+	</Target>
+
+	<!-- Ensure Node.js is installed and dependencies are restored -->
+	<Target Name="EnsureNodeEnv" BeforeTargets="BuildClientApp">
+		<Exec Command="node --version" ContinueOnError="true">
+			<Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+		</Exec>
+		<Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
+		
+		<!-- Install npm dependencies if node_modules doesn't exist -->
+		<Exec WorkingDirectory="$(SpaRoot)" Command="npm install" Condition="!Exists('$(SpaRoot)node_modules')" />
+	</Target>
+
+	<!-- Build ClientApp on every build -->
+	<Target Name="BuildClientApp" BeforeTargets="Build" DependsOnTargets="EnsureNodeEnv">
+		<Message Importance="high" Text="Building ClientApp..." />
+		<Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" ContinueOnError="false" />
+		<Message Importance="high" Text="ClientApp build completed successfully." />
+	</Target>
+
+	<!-- Manual clean target for wwwroot -->
+	<Target Name="CleanWwwrootManual">
+		<Message Importance="high" Text="Manually cleaning wwwroot directory..." />
+		<ItemGroup>
+			<WwwrootFiles Include="wwwroot\**\*" />
+		</ItemGroup>
+		<Delete Files="@(WwwrootFiles)" Condition="Exists('wwwroot')" />
+		<RemoveDir Directories="wwwroot" Condition="Exists('wwwroot')" />
+		<MakeDir Directories="wwwroot" />
+		<Message Importance="high" Text="wwwroot directory manually cleaned successfully." />
+	</Target>
+
+	<!-- Build ClientApp when running from Visual Studio -->
+	<Target Name="BuildClientAppOnRun" BeforeTargets="Run">
+		<Message Importance="high" Text="Building ClientApp for run..." />
+		<CallTarget Targets="BuildClientApp" />
+	</Target>
+
 	<!-- Build ClientApp on publish -->
 	<Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
 		<Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
@@ -57,17 +106,6 @@
 				<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
 			</ResolvedFileToPublish>
 		</ItemGroup>
-	</Target>
-
-	<!-- Build ClientApp during development build -->
-	<Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
-		<!-- Ensure Node.js is installed -->
-		<Exec Command="node --version" ContinueOnError="true">
-			<Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
-		</Exec>
-		<Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
-		<Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
-		<Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
 	</Target>
 
 </Project>

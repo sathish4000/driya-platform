@@ -1,90 +1,112 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <div class="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
-          <span class="text-white font-bold text-xl">D</span>
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full">
+      <!-- Logo and Header -->
+      <div class="text-center mb-8">
+        <div class="mx-auto h-16 w-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+          <span class="text-white font-bold text-2xl">D</span>
         </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {{ isLogin ? 'Sign in to your account' : 'Create your account' }}
+        <h2 class="mt-6 text-3xl font-bold text-gray-900">
+          {{ isLogin ? 'Welcome back' : 'Create your account' }}
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          {{ isLogin ? "Don't have an account?" : "Already have an account?" }}
-          <button
-            @click="switchMode"
-            class="font-medium text-blue-600 hover:text-blue-500"
-          >
-            {{ isLogin ? 'Sign up' : 'Sign in' }}
-          </button>
+        <p class="mt-2 text-gray-600">
+          {{ isLogin ? 'Sign in to your DRIYA Platform account' : 'Join thousands of developers using DRIYA Platform' }}
         </p>
       </div>
-      
-      <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
-        <div class="space-y-4">
+
+      <!-- Form Card -->
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Email -->
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
+            <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
               Email address
             </label>
-            <input
-              id="email"
-              v-model="formData.email"
-              type="email"
-              required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              :class="{ 'border-red-300': errors.email }"
-              placeholder="Enter your email"
-            />
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                </svg>
+              </div>
+              <input
+                id="email"
+                v-model="formData.email"
+                type="email"
+                required
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.email }"
+                placeholder="Enter your email"
+              />
+            </div>
             <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
           </div>
 
           <!-- First Name (Registration only) -->
           <div v-if="!isLogin">
-            <label for="firstName" class="block text-sm font-medium text-gray-700">
+            <label for="firstName" class="block text-sm font-semibold text-gray-700 mb-2">
               First name
             </label>
-            <input
-              id="firstName"
-              v-model="formData.firstName"
-              type="text"
-              required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              :class="{ 'border-red-300': errors.firstName }"
-              placeholder="Enter your first name"
-            />
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+              <input
+                id="firstName"
+                v-model="formData.firstName"
+                type="text"
+                required
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.firstName }"
+                placeholder="Enter your first name"
+              />
+            </div>
             <p v-if="errors.firstName" class="mt-1 text-sm text-red-600">{{ errors.firstName }}</p>
           </div>
 
           <!-- Last Name (Registration only) -->
           <div v-if="!isLogin">
-            <label for="lastName" class="block text-sm font-medium text-gray-700">
+            <label for="lastName" class="block text-sm font-semibold text-gray-700 mb-2">
               Last name
             </label>
-            <input
-              id="lastName"
-              v-model="formData.lastName"
-              type="text"
-              required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              :class="{ 'border-red-300': errors.lastName }"
-              placeholder="Enter your last name"
-            />
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+              <input
+                id="lastName"
+                v-model="formData.lastName"
+                type="text"
+                required
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.lastName }"
+                placeholder="Enter your last name"
+              />
+            </div>
             <p v-if="errors.lastName" class="mt-1 text-sm text-red-600">{{ errors.lastName }}</p>
           </div>
 
           <!-- Password -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
+            <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
               Password
             </label>
-            <div class="mt-1 relative">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+              </div>
               <input
                 id="password"
                 v-model="formData.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
-                class="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                :class="{ 'border-red-300': errors.password }"
+                class="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.password }"
                 placeholder="Enter your password"
               />
               <button
@@ -92,8 +114,8 @@
                 @click="togglePasswordVisibility"
                 class="absolute inset-y-0 right-0 pr-3 flex items-center"
               >
-                <EyeIcon v-if="!showPassword" class="h-5 w-5 text-gray-400" />
-                <EyeSlashIcon v-else class="h-5 w-5 text-gray-400" />
+                <EyeIcon v-if="!showPassword" class="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <EyeSlashIcon v-else class="h-5 w-5 text-gray-400 hover:text-gray-600" />
               </button>
             </div>
             <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
@@ -101,38 +123,69 @@
 
           <!-- Confirm Password (Registration only) -->
           <div v-if="!isLogin">
-            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">
+            <label for="confirmPassword" class="block text-sm font-semibold text-gray-700 mb-2">
               Confirm password
             </label>
-            <input
-              id="confirmPassword"
-              v-model="formData.confirmPassword"
-              type="password"
-              required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              :class="{ 'border-red-300': errors.confirmPassword }"
-              placeholder="Confirm your password"
-            />
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+              </div>
+              <input
+                id="confirmPassword"
+                v-model="formData.confirmPassword"
+                type="password"
+                required
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': errors.confirmPassword }"
+                placeholder="Confirm your password"
+              />
+            </div>
             <p v-if="errors.confirmPassword" class="mt-1 text-sm text-red-600">{{ errors.confirmPassword }}</p>
           </div>
-        </div>
 
-        <div>
-          <button
-            type="submit"
-            :disabled="isLoading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="isLoading" class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-            {{ isLoading ? 'Processing...' : (isLogin ? 'Sign in' : 'Sign up') }}
-          </button>
+          <!-- Submit Button -->
+          <div>
+            <button
+              type="submit"
+              :disabled="isLoading"
+              class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+            >
+              <span v-if="isLoading" class="absolute left-0 inset-y-0 flex items-center pl-3">
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </span>
+              {{ isLoading ? 'Processing...' : (isLogin ? 'Sign in' : 'Create account') }}
+            </button>
+          </div>
+
+          <!-- Switch Mode -->
+          <div class="text-center">
+            <p class="text-sm text-gray-600">
+              {{ isLogin ? "Don't have an account?" : "Already have an account?" }}
+              <button
+                @click="switchMode"
+                class="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-200"
+              >
+                {{ isLogin ? 'Sign up' : 'Sign in' }}
+              </button>
+            </p>
+          </div>
+        </form>
+      </div>
+
+      <!-- Demo Credentials -->
+      <div class="mt-8 bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <h3 class="text-sm font-semibold text-blue-900 mb-2">Demo Credentials</h3>
+        <p class="text-xs text-blue-700 mb-2">Use these credentials to test the application:</p>
+        <div class="text-xs text-blue-600 space-y-1">
+          <p><strong>Email:</strong> admin@driya.com</p>
+          <p><strong>Password:</strong> Admin123!</p>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>
@@ -247,33 +300,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-/* Additional styles for form elements */
-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.border-red-300 {
-  border-color: #fca5a5;
-}
-
-.text-red-600 {
-  color: #dc2626;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>
 

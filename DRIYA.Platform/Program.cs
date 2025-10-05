@@ -96,6 +96,9 @@ public class Program
 
             // Add services to the container
             builder.Services.AddControllers();
+            
+            // Add database seeder
+            builder.Services.AddScoped<DatabaseSeeder>();
 
             // Add API documentation
             builder.Services.AddEndpointsApiExplorer();

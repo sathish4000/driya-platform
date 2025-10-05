@@ -1,296 +1,611 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
+
+// PrimeVue Components
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Dropdown from 'primevue/dropdown'
+import Tag from 'primevue/tag'
+import Avatar from 'primevue/avatar'
+import Dialog from 'primevue/dialog'
+import Card from 'primevue/card'
+import Toolbar from 'primevue/toolbar'
+// Remove problematic imports - we'll handle filtering manually
+
+// Icons
 import { 
   PlusIcon, 
-  UserIcon,
   MagnifyingGlassIcon,
+  FunnelIcon,
+  UserPlusIcon,
   PencilIcon,
   TrashIcon,
-  CheckCircleIcon,
-  XCircleIcon
+  EyeIcon,
+  ShieldCheckIcon
 } from '@heroicons/vue/24/outline'
 
-const isLoading = ref(false)
+const toast = useToast()
+const confirm = useConfirm()
+
+// Data
 const users = ref([])
-const searchTerm = ref('')
+const loading = ref(false)
+const selectedUsers = ref([])
+const globalFilter = ref('')
+const filters = ref({
+  global: { value: null, matchMode: 'contains' },
+  firstName: { value: null, matchMode: 'startsWith' },
+  lastName: { value: null, matchMode: 'startsWith' },
+  email: { value: null, matchMode: 'contains' },
+  role: { value: null, matchMode: 'equals' },
+  status: { value: null, matchMode: 'equals' }
+})
 
-const fetchUsers = async () => {
-  isLoading.value = true
-  try {
-    // Mock data
-    users.value = [
-      {
-        id: '1',
-        email: 'john.doe@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'Admin',
-        isActive: true,
-        lastLoginAt: '2024-01-15T10:30:00Z',
-        createdAt: '2024-01-01T00:00:00Z'
-      },
-      {
-        id: '2',
-        email: 'jane.smith@example.com',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        role: 'User',
-        isActive: true,
-        lastLoginAt: '2024-01-14T15:45:00Z',
-        createdAt: '2024-01-05T00:00:00Z'
-      },
-      {
-        id: '3',
-        email: 'bob.wilson@example.com',
-        firstName: 'Bob',
-        lastName: 'Wilson',
-        role: 'Manager',
-        isActive: false,
-        lastLoginAt: '2024-01-10T09:15:00Z',
-        createdAt: '2024-01-10T00:00:00Z'
-      }
-    ]
-  } catch (error) {
-    console.error('Failed to fetch users:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
+// Dialog states
+const userDialog = ref(false)
+const deleteUserDialog = ref(false)
+const user = ref({})
+const submitted = ref(false)
 
+// Role options
+const roles = ref([
+  { label: 'Global Admin', value: 'GlobalAdmin' },
+  { label: 'Tenant Admin', value: 'TenantAdmin' },
+  { label: 'Manager', value: 'Manager' },
+  { label: 'User', value: 'User' }
+])
+
+// Status options
+const statuses = ref([
+  { label: 'Active', value: 'active' },
+  { label: 'Inactive', value: 'inactive' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Suspended', value: 'suspended' }
+])
+
+// Computed
 const filteredUsers = computed(() => {
-  if (!searchTerm.value) return users.value
+  if (!globalFilter.value) return users.value
   
   return users.value.filter(user => 
-    user.firstName.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    user.lastName.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.value.toLowerCase())
+    user.firstName?.toLowerCase().includes(globalFilter.value.toLowerCase()) ||
+    user.lastName?.toLowerCase().includes(globalFilter.value.toLowerCase()) ||
+    user.email?.toLowerCase().includes(globalFilter.value.toLowerCase())
   )
 })
 
-const getStatusBadge = (isActive) => {
-  return isActive 
-    ? { text: 'Active', class: 'bg-green-100 text-green-800', icon: CheckCircleIcon }
-    : { text: 'Inactive', class: 'bg-red-100 text-red-800', icon: XCircleIcon }
+// Methods
+const loadUsers = async () => {
+  loading.value = true
+  try {
+    // Mock data - replace with actual API call
+    users.value = [
+      {
+        id: '1',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        role: 'GlobalAdmin',
+        status: 'active',
+        lastLogin: '2024-01-15T10:30:00Z',
+        createdAt: '2024-01-01T00:00:00Z',
+        avatar: null
+      },
+      {
+        id: '2',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane.smith@example.com',
+        role: 'TenantAdmin',
+        status: 'active',
+        lastLogin: '2024-01-14T15:45:00Z',
+        createdAt: '2024-01-02T00:00:00Z',
+        avatar: null
+      },
+      {
+        id: '3',
+        firstName: 'Bob',
+        lastName: 'Johnson',
+        email: 'bob.johnson@example.com',
+        role: 'User',
+        status: 'pending',
+        lastLogin: null,
+        createdAt: '2024-01-10T00:00:00Z',
+        avatar: null
+      }
+    ]
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to load users', life: 3000 })
+  } finally {
+    loading.value = false
+  }
+}
+
+const openNew = () => {
+  user.value = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: 'User',
+    status: 'pending'
+  }
+  submitted.value = false
+  userDialog.value = true
+}
+
+const editUser = (editUser) => {
+  user.value = { ...editUser }
+  userDialog.value = true
+}
+
+const hideDialog = () => {
+  userDialog.value = false
+  submitted.value = false
+}
+
+const saveUser = async () => {
+  submitted.value = true
+  
+  if (user.value.firstName && user.value.lastName && user.value.email) {
+    try {
+      if (user.value.id) {
+        // Update existing user
+        const index = users.value.findIndex(u => u.id === user.value.id)
+        users.value[index] = { ...user.value }
+        toast.add({ severity: 'success', summary: 'Success', detail: 'User updated successfully', life: 3000 })
+      } else {
+        // Create new user
+        user.value.id = Date.now().toString()
+        user.value.createdAt = new Date().toISOString()
+        users.value.push({ ...user.value })
+        toast.add({ severity: 'success', summary: 'Success', detail: 'User created successfully', life: 3000 })
+      }
+      
+      userDialog.value = false
+      user.value = {}
+    } catch (error) {
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to save user', life: 3000 })
+    }
+  }
+}
+
+const confirmDeleteUser = (userToDelete) => {
+  user.value = userToDelete
+  deleteUserDialog.value = true
+}
+
+const deleteUser = async () => {
+  try {
+    users.value = users.value.filter(u => u.id !== user.value.id)
+    deleteUserDialog.value = false
+    user.value = {}
+    toast.add({ severity: 'success', summary: 'Success', detail: 'User deleted successfully', life: 3000 })
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete user', life: 3000 })
+  }
+}
+
+const getRoleSeverity = (role) => {
+  switch (role) {
+    case 'GlobalAdmin': return 'danger'
+    case 'TenantAdmin': return 'warning'
+    case 'Manager': return 'info'
+    case 'User': return 'success'
+    default: return 'secondary'
+  }
+}
+
+const getStatusSeverity = (status) => {
+  switch (status) {
+    case 'active': return 'success'
+    case 'inactive': return 'secondary'
+    case 'pending': return 'warning'
+    case 'suspended': return 'danger'
+    default: return 'secondary'
+  }
 }
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A'
+  if (!dateString) return 'Never'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   })
 }
 
+// Toolbar template
+const leftToolbarTemplate = () => {
+  return `
+    <div class="flex flex-wrap gap-2">
+      <Button label="New User" icon="pi pi-plus" severity="success" @click="openNew" />
+      <Button 
+        v-if="selectedUsers.length > 0"
+        label="Delete Selected" 
+        icon="pi pi-trash" 
+        severity="danger" 
+        @click="confirmDeleteSelected" 
+      />
+    </div>
+  `
+}
+
+const rightToolbarTemplate = () => {
+  return `
+    <div class="flex items-center gap-2">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search" />
+        <InputText 
+          v-model="globalFilter" 
+          placeholder="Search users..." 
+          class="w-64"
+        />
+      </span>
+    </div>
+  `
+}
+
 onMounted(() => {
-  fetchUsers()
+  loadUsers()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-6">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="mb-8">
-        <div class="flex justify-between items-center">
+  <div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
+        <p class="text-gray-600 mt-1">Manage users, roles, and permissions across your organization</p>
+      </div>
+      <div class="flex items-center space-x-3">
+        <Button 
+          label="Export" 
+          icon="pi pi-download" 
+          severity="secondary" 
+          outlined 
+        />
+        <Button 
+          label="Import" 
+          icon="pi pi-upload" 
+          severity="secondary" 
+          outlined 
+        />
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card class="p-4">
+        <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
-            <p class="mt-2 text-gray-600">Manage users within your tenant</p>
+            <p class="text-sm font-medium text-gray-600">Total Users</p>
+            <p class="text-2xl font-bold text-gray-900">{{ users.length }}</p>
           </div>
-          <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-            <PlusIcon class="h-4 w-4 mr-2" />
-            Add User
-          </button>
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <i class="pi pi-users text-blue-600 text-xl"></i>
+          </div>
         </div>
-      </div>
-
-      <!-- Search -->
-      <div class="bg-white shadow rounded-lg mb-6">
-        <div class="px-4 py-5 sm:p-6">
-          <div class="max-w-md">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search Users</label>
-            <div class="relative">
-              <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                v-model="searchTerm"
-                type="text"
-                class="pl-10 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Search by name, email, or role..."
-              />
+      </Card>
+      
+      <Card class="p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Active Users</p>
+            <p class="text-2xl font-bold text-green-600">{{ users.filter(u => u.status === 'active').length }}</p>
             </div>
+          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <i class="pi pi-check-circle text-green-600 text-xl"></i>
           </div>
         </div>
-      </div>
-
-      <!-- Users Table -->
-      <div class="bg-white shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Users ({{ filteredUsers.length }})</h3>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Login
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-10 w-10">
-                        <div class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
-                          <span class="text-white font-medium text-sm">{{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}</span>
+      </Card>
+      
+      <Card class="p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Pending</p>
+            <p class="text-2xl font-bold text-yellow-600">{{ users.filter(u => u.status === 'pending').length }}</p>
                         </div>
-                      </div>
-                      <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">{{ user.firstName }} {{ user.lastName }}</div>
-                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+          <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <i class="pi pi-clock text-yellow-600 text-xl"></i>
                       </div>
                     </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {{ user.role }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          :class="getStatusBadge(user.isActive).class">
-                      <component :is="getStatusBadge(user.isActive).icon" class="h-3 w-3 mr-1" />
-                      {{ getStatusBadge(user.isActive).text }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ formatDate(user.lastLoginAt) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ formatDate(user.createdAt) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div class="flex space-x-2">
-                      <button class="text-blue-600 hover:text-blue-900">
-                        <PencilIcon class="h-4 w-4" />
-                      </button>
-                      <button class="text-red-600 hover:text-red-900">
-                        <TrashIcon class="h-4 w-4" />
-                      </button>
+      </Card>
+      
+      <Card class="p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Admins</p>
+            <p class="text-2xl font-bold text-purple-600">{{ users.filter(u => u.role.includes('Admin')).length }}</p>
                     </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <i class="pi pi-shield text-purple-600 text-xl"></i>
           </div>
         </div>
+      </Card>
+    </div>
+
+    <!-- Data Table -->
+    <Card>
+      <template #content>
+        <DataTable
+          v-model:selection="selectedUsers"
+          :value="filteredUsers"
+          :loading="loading"
+          dataKey="id"
+          :paginator="true"
+          :rows="10"
+          :rowsPerPageOptions="[5, 10, 25, 50]"
+          :filters="filters"
+          filterDisplay="row"
+          :globalFilterFields="['firstName', 'lastName', 'email', 'role']"
+          paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} users"
+          responsiveLayout="scroll"
+          class="p-datatable-sm"
+        >
+          <template #header>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-semibold text-gray-900">Users</h3>
+                <Tag :value="`${users.length} total`" severity="info" />
       </div>
+              <div class="flex items-center gap-2">
+                <span class="p-input-icon-left">
+                  <i class="pi pi-search" />
+                  <InputText 
+                    v-model="globalFilter" 
+                    placeholder="Search users..." 
+                    class="w-64"
+                  />
+                </span>
+                <Button 
+                  label="New User" 
+                  icon="pi pi-plus" 
+                  severity="success" 
+                  @click="openNew" 
+                />
     </div>
   </div>
 </template>
 
+          <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+          
+          <Column field="firstName" header="User" sortable style="min-width: 200px">
+            <template #body="slotProps">
+              <div class="flex items-center space-x-3">
+                <Avatar 
+                  :label="slotProps.data.firstName?.charAt(0) + slotProps.data.lastName?.charAt(0)"
+                  shape="circle"
+                  size="normal"
+                  class="bg-primary-100 text-primary-700"
+                />
+                <div>
+                  <div class="font-medium text-gray-900">
+                    {{ slotProps.data.firstName }} {{ slotProps.data.lastName }}
+                  </div>
+                  <div class="text-sm text-gray-500">{{ slotProps.data.email }}</div>
+                </div>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="role" header="Role" sortable style="min-width: 120px">
+            <template #body="slotProps">
+              <Tag 
+                :value="slotProps.data.role" 
+                :severity="getRoleSeverity(slotProps.data.role)"
+              />
+            </template>
+          </Column>
+
+          <Column field="status" header="Status" sortable style="min-width: 100px">
+            <template #body="slotProps">
+              <Tag 
+                :value="slotProps.data.status" 
+                :severity="getStatusSeverity(slotProps.data.status)"
+              />
+            </template>
+          </Column>
+
+          <Column field="lastLogin" header="Last Login" sortable style="min-width: 150px">
+            <template #body="slotProps">
+              <span class="text-sm text-gray-600">
+                {{ formatDate(slotProps.data.lastLogin) }}
+              </span>
+            </template>
+          </Column>
+
+          <Column field="createdAt" header="Created" sortable style="min-width: 120px">
+            <template #body="slotProps">
+              <span class="text-sm text-gray-600">
+                {{ formatDate(slotProps.data.createdAt) }}
+              </span>
+            </template>
+          </Column>
+
+          <Column header="Actions" style="min-width: 120px">
+            <template #body="slotProps">
+              <div class="flex items-center space-x-2">
+                <Button 
+                  icon="pi pi-eye" 
+                  severity="info" 
+                  text 
+                  rounded 
+                  @click="editUser(slotProps.data)"
+                  v-tooltip.top="'View Details'"
+                />
+                <Button 
+                  icon="pi pi-pencil" 
+                  severity="warning" 
+                  text 
+                  rounded 
+                  @click="editUser(slotProps.data)"
+                  v-tooltip.top="'Edit User'"
+                />
+                <Button 
+                  icon="pi pi-trash" 
+                  severity="danger" 
+                  text 
+                  rounded 
+                  @click="confirmDeleteUser(slotProps.data)"
+                  v-tooltip.top="'Delete User'"
+                />
+              </div>
+            </template>
+          </Column>
+        </DataTable>
+      </template>
+    </Card>
+
+    <!-- User Dialog -->
+    <Dialog 
+      v-model:visible="userDialog" 
+      :style="{ width: '600px' }" 
+      header="User Details" 
+      :modal="true" 
+      class="p-fluid"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="field">
+          <label for="firstName" class="font-medium">First Name *</label>
+          <InputText 
+            id="firstName" 
+            v-model="user.firstName" 
+            required="true" 
+            autofocus 
+            :class="{ 'p-invalid': submitted && !user.firstName }"
+          />
+          <small v-if="submitted && !user.firstName" class="p-error">First name is required.</small>
+        </div>
+
+        <div class="field">
+          <label for="lastName" class="font-medium">Last Name *</label>
+          <InputText 
+            id="lastName" 
+            v-model="user.lastName" 
+            required="true" 
+            :class="{ 'p-invalid': submitted && !user.lastName }"
+          />
+          <small v-if="submitted && !user.lastName" class="p-error">Last name is required.</small>
+        </div>
+
+        <div class="field md:col-span-2">
+          <label for="email" class="font-medium">Email *</label>
+          <InputText 
+            id="email" 
+            v-model="user.email" 
+            required="true" 
+            type="email"
+            :class="{ 'p-invalid': submitted && !user.email }"
+          />
+          <small v-if="submitted && !user.email" class="p-error">Email is required.</small>
+        </div>
+
+        <div class="field">
+          <label for="role" class="font-medium">Role</label>
+          <Dropdown 
+            id="role" 
+            v-model="user.role" 
+            :options="roles" 
+            optionLabel="label" 
+            optionValue="value"
+            placeholder="Select a role"
+          />
+        </div>
+
+        <div class="field">
+          <label for="status" class="font-medium">Status</label>
+          <Dropdown 
+            id="status" 
+            v-model="user.status" 
+            :options="statuses" 
+            optionLabel="label" 
+            optionValue="value"
+            placeholder="Select status"
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <Button 
+          label="Cancel" 
+          icon="pi pi-times" 
+          text 
+          @click="hideDialog"
+        />
+        <Button 
+          label="Save" 
+          icon="pi pi-check" 
+          @click="saveUser"
+        />
+      </template>
+    </Dialog>
+
+    <!-- Delete User Dialog -->
+    <Dialog 
+      v-model:visible="deleteUserDialog" 
+      :style="{ width: '450px' }" 
+      header="Confirm" 
+      :modal="true"
+    >
+      <div class="flex items-center space-x-3">
+        <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
+        <span>Are you sure you want to delete <b>{{ user.firstName }} {{ user.lastName }}</b>?</span>
+      </div>
+      <template #footer>
+        <Button 
+          label="No" 
+          icon="pi pi-times" 
+          text 
+          @click="deleteUserDialog = false"
+        />
+        <Button 
+          label="Yes" 
+          icon="pi pi-check" 
+          severity="danger" 
+          @click="deleteUser"
+        />
+      </template>
+    </Dialog>
+  </div>
+</template>
+
 <style scoped>
-/* Additional utility classes */
-.overflow-hidden { overflow: hidden; }
-.overflow-x-auto { overflow-x: auto; }
-.shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
-.rounded-lg { border-radius: 0.5rem; }
-.rounded-md { border-radius: 0.375rem; }
-.rounded-full { border-radius: 9999px; }
+/* Custom styles for better integration */
+:deep(.p-datatable .p-datatable-header) {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
 
-.px-4 { padding-left: 1rem; padding-right: 1rem; }
-.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
-.py-5 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
-.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  background-color: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+}
 
-.mb-4 { margin-bottom: 1rem; }
-.mb-6 { margin-bottom: 1.5rem; }
-.mb-8 { margin-bottom: 2rem; }
-.ml-4 { margin-left: 1rem; }
-.mr-2 { margin-right: 0.5rem; }
-.mt-2 { margin-top: 0.5rem; }
+:deep(.p-datatable .p-datatable-tbody > tr) {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s ease-in-out;
+}
 
-.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
-.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
-.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-.text-xs { font-size: 0.75rem; line-height: 1rem; }
+:deep(.p-datatable .p-datatable-tbody > tr:hover) {
+  background-color: #f9fafb;
+}
 
-.font-bold { font-weight: 700; }
-.font-medium { font-weight: 500; }
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  color: #111827;
+}
 
-.text-gray-900 { color: #111827; }
-.text-gray-600 { color: #4b5563; }
-.text-gray-500 { color: #6b7280; }
-.text-gray-400 { color: #9ca3af; }
-.text-blue-600 { color: #2563eb; }
-.text-red-600 { color: #dc2626; }
-.text-green-800 { color: #166534; }
-.text-red-800 { color: #991b1b; }
-.text-gray-800 { color: #1f2937; }
-
-.bg-white { background-color: #ffffff; }
-.bg-gray-50 { background-color: #f9fafb; }
-.bg-blue-600 { background-color: #2563eb; }
-.bg-green-100 { background-color: #dcfce7; }
-.bg-red-100 { background-color: #fee2e2; }
-.bg-gray-100 { background-color: #f3f4f6; }
-
-.border-gray-300 { border-color: #d1d5db; }
-.border-gray-200 { border-color: #e5e7eb; }
-
-.border { border-width: 1px; }
-
-.flex { display: flex; }
-.inline-flex { display: inline-flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.space-x-2 > * + * { margin-left: 0.5rem; }
-
-.h-3 { height: 0.75rem; }
-.h-4 { height: 1rem; }
-.h-10 { height: 2.5rem; }
-.w-3 { width: 0.75rem; }
-.w-4 { width: 1rem; }
-.w-10 { width: 2.5rem; }
-
-.whitespace-nowrap { white-space: nowrap; }
-
-.relative { position: relative; }
-.absolute { position: absolute; }
-.left-3 { left: 0.75rem; }
-.top-1\/2 { top: 50%; }
-
-.transform { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)); }
-.-translate-y-1\/2 { --tw-translate-y: -50%; }
-
-.divide-y > * + * { border-top-width: 1px; border-top-color: #e5e7eb; }
-.divide-gray-200 > * + * { border-top-color: #e5e7eb; }
-
-.min-w-full { min-width: 100%; }
-.max-w-md { max-width: 28rem; }
-
-.hover\:bg-gray-50:hover { background-color: #f9fafb; }
-.hover\:bg-blue-700:hover { background-color: #1d4ed8; }
-.hover\:text-blue-900:hover { color: #1e3a8a; }
-.hover\:text-red-900:hover { color: #7f1d1d; }
-
-.focus\:ring-blue-500:focus { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-.focus\:border-blue-500:focus { border-color: #3b82f6; }
+:deep(.p-datatable .p-paginator) {
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+}
 </style>

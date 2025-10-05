@@ -1,7 +1,12 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia } from 'pinia'
+import PrimeVue from 'primevue/config'
 import App from './App.vue'
+import './assets/main.css'
+
+// PrimeVue CSS
+import 'primeicons/primeicons.css'
 
 // Views
 import HomeView from './views/HomeView.vue'
@@ -19,20 +24,92 @@ import SettingsView from './views/SettingsView.vue'
 // Create Pinia store
 const pinia = createPinia()
 
+// Create app
+const app = createApp(App)
+
+// Configure PrimeVue
+app.use(PrimeVue)
+
 // Create router
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: HomeView },
     { path: '/login', component: LoginView },
-    { path: '/dashboard', component: DashboardView, meta: { requiresAuth: true } },
-    { path: '/admin', component: AdminDashboardView, meta: { requiresAuth: true, requiresAdmin: true } },
-    { path: '/tenants', component: TenantManagementView, meta: { requiresAuth: true, requiresAdmin: true } },
-    { path: '/users', component: UserManagementView, meta: { requiresAuth: true } },
-    { path: '/features', component: FeatureManagementView, meta: { requiresAuth: true } },
-    { path: '/billing', component: BillingView, meta: { requiresAuth: true } },
-    { path: '/api-keys', component: ApiKeyManagementView, meta: { requiresAuth: true } },
-    { path: '/settings', component: SettingsView, meta: { requiresAuth: true } },
+    { 
+      path: '/dashboard', 
+      component: DashboardView, 
+      meta: { 
+        requiresAuth: true, 
+        title: 'Dashboard',
+        description: 'Overview of your platform activity and metrics'
+      } 
+    },
+    { 
+      path: '/admin', 
+      component: AdminDashboardView, 
+      meta: { 
+        requiresAuth: true, 
+        requiresAdmin: true,
+        title: 'Admin Dashboard',
+        description: 'System administration and monitoring'
+      } 
+    },
+    { 
+      path: '/tenants', 
+      component: TenantManagementView, 
+      meta: { 
+        requiresAuth: true, 
+        requiresAdmin: true,
+        title: 'Tenant Management',
+        description: 'Manage multi-tenant organizations'
+      } 
+    },
+    { 
+      path: '/users', 
+      component: UserManagementView, 
+      meta: { 
+        requiresAuth: true,
+        title: 'User Management',
+        description: 'Manage users, roles, and permissions'
+      } 
+    },
+    { 
+      path: '/features', 
+      component: FeatureManagementView, 
+      meta: { 
+        requiresAuth: true,
+        title: 'Feature Management',
+        description: 'Configure feature flags and system features'
+      } 
+    },
+    { 
+      path: '/billing', 
+      component: BillingView, 
+      meta: { 
+        requiresAuth: true,
+        title: 'Billing',
+        description: 'Manage subscriptions and payments'
+      } 
+    },
+    { 
+      path: '/api-keys', 
+      component: ApiKeyManagementView, 
+      meta: { 
+        requiresAuth: true,
+        title: 'API Key Management',
+        description: 'Manage your API keys for integrations'
+      } 
+    },
+    { 
+      path: '/settings', 
+      component: SettingsView, 
+      meta: { 
+        requiresAuth: true,
+        title: 'Settings',
+        description: 'Configure your account and preferences'
+      } 
+    },
     { path: '/:pathMatch(.*)*', component: NotFoundView }
   ]
 })
@@ -51,8 +128,7 @@ router.beforeEach((to, from, next) => {
   }
 })
 
-// Create and mount app
-const app = createApp(App)
+// Use plugins and mount app
 app.use(pinia)
 app.use(router)
 app.mount('#app')
