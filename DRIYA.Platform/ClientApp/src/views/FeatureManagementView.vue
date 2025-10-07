@@ -444,36 +444,3 @@ watch(currentApplicationId, watchApplication)
     </Dialog>
   </div>
 </template>
-
-<style scoped>
-/* Custom styles for better integration */
-:deep(.p-datatable .p-datatable-header) {
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-:deep(.p-datatable .p-datatable-thead > tr > th) {
-  background-color: #f9fafb;
-  color: #374151;
-  font-weight: 600;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-:deep(.p-datatable .p-datatable-tbody > tr) {
-  border-bottom: 1px solid #f3f4f6;
-  transition: background-color 0.15s ease-in-out;
-}
-
-:deep(.p-datatable .p-datatable-tbody > tr:hover) {
-  background-color: #f9fafb;
-}
-
-:deep(.p-datatable .p-datatable-tbody > tr > td) {
-  color: #111827;
-}
-
-:deep(.p-datatable .p-paginator) {
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
-}
-</style>
